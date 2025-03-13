@@ -1,0 +1,38 @@
+# Map basic input data
+
+## Mapping food access poi
+
+```{r}
+tm_shape(la_county) +
+  tm_borders() +
+  tm_shape(foodinsp23_24_SSIclean) +
+  tm_dots(col = "green", size = 0.01) +
+  tm_layout(legend.position = c("left", "bottom"))
+
+```
+
+## Mapping population weighted census tract centroids
+
+```{r}
+tm_shape(la_county) +
+  tm_borders() +
+  tm_shape(la_ctcent_dat) +
+  tm_dots(col = "red", size = 0.01) +
+  tm_layout(legend.position = c("left", "bottom"))
+
+```
+
+## Mapping POI and population-weighted centroids data
+
+```{r}
+tm_shape(la_county) +
+  tm_borders() +
+  tm_shape(foodinsp23_24_SSIclean) +
+  tm_dots(col = "green", size = 0.01) +
+  tm_shape(la_ct) +
+  tm_borders() +
+  tm_shape(la_ctcent_dat) +
+  tm_dots(col = "red", size = 0.01) +
+  tm_layout(legend.position = c("left", "bottom"))
+
+```
