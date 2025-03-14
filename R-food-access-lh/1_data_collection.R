@@ -19,7 +19,6 @@ unique(st_is_valid(la_cb, reason=T))
 la_ctcent <- get_pop_weighted_centroid(la_cb, 'TRACTCE20', 'POP20') %>% 
   st_transform(proj_crs)
 
-
 # merge ct centroids with rest of data
 la_ctcent_dat <- la_ct %>%
   st_drop_geometry() %>%
@@ -27,9 +26,8 @@ la_ctcent_dat <- la_ct %>%
   st_as_sf()
 
 
-st_geometry_type(la_ctcent_dat)
+unique(st_geometry_type(la_ctcent_dat))
 st_crs(la_ctcent_dat)
-
 
 # ------ LOAD SNAP POI DATA ------ #
 # Load SNAP historical data for the year 2021
@@ -68,3 +66,6 @@ places_vars <- get_CDCPlaces(geography='census', measure=c("DIABETES", "OBESITY"
   filter(countyname == 'Los Angeles') 
 
 unique(places_vars$countyname)
+
+
+# ------ OSM DATA ------ #

@@ -14,3 +14,6 @@ source('C:/Users/angie/OneDrive/Desktop/data-analysis/0_helper-functions/get-foo
 source('C:/Users/angie/OneDrive/Desktop/data-analysis/0_helper-functions/get-la-county-admin-data.R')
 source('C:/Users/angie/OneDrive/Desktop/data-analysis/0_helper-functions/get-health-data.R')
 
+library(reticulate)
+py_run_file('C:/Users/angie/OneDrive/Desktop/data-analysis/0_helper-functions/get_osm_data.py')
+
