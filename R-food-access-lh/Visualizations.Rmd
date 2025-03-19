@@ -20,9 +20,44 @@ tm_shape(la_county) +
   tm_dots(col = "red", size = 0.01) +
   tm_layout(legend.position = c("left", "bottom"))
 
+tm_shape(la_county) +
+  tm_borders() +
+  tm_shape(la_hh_sample) +
+  tm_dots(col = "black", size = 0.01) +
+  tm_layout(legend.position = c("left", "bottom"))
+
 ```
 
-## Mapping POI and population-weighted centroids data
+# Inspecting point datasets
+
+```{r}
+# Select a random census tract
+set.seed(123)
+random_tract <- la_ct %>% slice_sample(n = 1)
+
+# Find adjacent tracts
+adjacent_tracts <- la_ct[st_touches(random_tract, la_ct, sparse = FALSE), ]
+
+# Plot the selected and adjacent tracts
+tmap_mode("view")
+
+tm_shape(random_tract) + 
+  tm_borders(lwd = 2, col = "red") + tm_fill(col = "pink", alpha = 0.5) +
+  tm_shape(adjacent_tracts) + 
+  tm_borders(lwd = 2, col = "blue") + tm_fill(col = "lightblue", alpha = 0.5) +
+  tm_shape(la_ctcent_dat) +
+  tm_dots(col = "red", size = 0.01) +
+  tm_shape(la_ct_wtcent_dat) +
+  tm_dots(col = "green", size = 0.01) +
+  tm_shape(la_ct) + 
+  tm_borders() +
+  tm_layout(legend.position = c("left", "bottom"))
+
+## TODO look into tracts with strange behavior ID = 980016, 990200 + 599100 (in the middle of ocean)
+
+```
+
+# Mapping POI and population-weighted centroids data
 
 ```{r}
 tm_shape(la_county) +
