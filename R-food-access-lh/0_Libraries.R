@@ -7,12 +7,19 @@ library(crsuggest)
 library(sf)
 library(tigris)
 library(dplyr)
+library(osmextract)
+
+
 
 # 1
 library(centr)
 
+options(java.parameters = "-Xmx8G")
+library(r5r)
+
 
 source('helper/universal_variables.R')
+source('helper/data_functions.R')
 source('C:/Users/angie/OneDrive/Desktop/data-analysis/0_helper-functions/get-food-data.R')
 source('C:/Users/angie/OneDrive/Desktop/data-analysis/0_helper-functions/get-la-county-admin-data.R')
 source('C:/Users/angie/OneDrive/Desktop/data-analysis/0_helper-functions/get-health-data.R')

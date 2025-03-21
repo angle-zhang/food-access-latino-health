@@ -71,3 +71,38 @@ tm_shape(la_county) +
   tm_layout(legend.position = c("left", "bottom"))
 
 ```
+
+## Map terrain elevation and street network features
+
+```{r}
+
+elev <- get_dem("los_angeles", proj_crs)
+
+ocean <- rnaturalearth::ne_download(scale = 10, type = "ocean", category = "physical", returnclass = "sf") %>%
+  st_transform(proj_crs) %>%
+  st_make_valid()
+
+
+tmap_options(check.and.fix = TRUE)
+
+tm_shape(elev) +
+  tm_raster(palette = terrain.colors(100), style = "cont", title = "Elevation (m)") + tm_shape(ocean) +
+  tm_fill(col = "lightblue", alpha = 0.9) +  # Add ocean layer bodies
+  tm_shape(lac_boundary) + 
+   tm_borders(col = "black", alpha=.5) +
+   tm_shape(lac_buffer) + 
+  tm_borders(col = "black", alpha=.5)# Add county boundary
+
+
+```
+
+## Visualizing OSM
+
+```{r}
+  osm_lines <- get_osm(bbox=lac_bbox)
+  ht = c("primary", "secondary", "tertiary", "unclassified") # highway types of interest
+  osm_major_roads = osm_lines[osm_lines$highway %in% ht, ]
+  plot(osm_major_roads["highway"], key.pos = 1)
+
+
+```
