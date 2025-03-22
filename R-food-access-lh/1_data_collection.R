@@ -8,7 +8,7 @@ processed_path <- "C:/Users/angie/OneDrive/Desktop/data-analysis/0_shared-data/p
 # TODO get edges outside LA County
 # get suggested CRS
 
-proj_crs = as.integer(suggest_crs(get_county_boundary())$crs_code[1])
+
 
 # convert to suggested crs
 lac_boundary <- st_transform(get_county_boundary(), proj_crs)
@@ -27,8 +27,8 @@ print(unique(st_geometry_type(la_cb)))
 unique(st_is_valid(la_cb, reason=T))
 
 # DOWNLOAD DATA
-download_dem(lac_buffer, "los_angeles")
-
+download_dem(lac_buffer, "socal")
+download_osm(bbox=lac_bbox)
 # ------ GET CENTROIDS OF CTs ------ #
 # gets centroid of census blocks then calculates the population weighted centroid of a census tract based on those
 # for centroids that lie outside a census block, st_point_on_surface is used to get a point within the polygon
@@ -65,29 +65,12 @@ rm(la_ctcent_dat, la_ct_wtcent_dat, la_ctcent, la_ct, la_cb)
 unique(st_geometry_type(la_ctcent_dat))
 st_crs(la_ctcent_dat)
 
-# get household points from parcel data
-la_hh <- get_lac_households(proj_crs)
+
 # get sample for mapping
-la_hh_sample <- la_hh[sample(nrow(la_hh), 5000), ]
+la_hh_sample <- la_hh_cleaned[sample(nrow(la_hh_cleaned), 500), ]
 # ------ LOAD SNAP POI DATA ------ #
 # Load SNAP historical data for the year 2021
 snap_historical <- get_snap_historical(years = 2021, proj_crs = st_crs(lac_boundary))
-
-# ------ LOAD FOOD INSPECTION POI DATA ------ #
-# Load LA County food inspection data (2021-2024)
-foodinsp_21_24 <- get_foodinsp_lacounty()
-
-# Load LA County food inspection data (2023-2024) from SSI
-foodinsp23_24_SSI <- get_foodins_lacounty_ssi(proj_crs)
-
-# remove duplicates with facility ID, make sure to get the most recent status open vs closed
-foodinsp23_24_SSIclean <- foodinsp23_24_SSI %>% 
-  mutate(SOURCE=factor(SOURCE, ordered=T, levels=c("Dec_2023", "March_2024","June_2024", "Dec_2024" ))) %>%
-  group_by(FACILITY_ID) %>% 
-  filter(SOURCE == max(SOURCE)) %>% 
-  ungroup() #%>% 
-  # TODO test
-  #mutate(SIZE = str_extract(PE_DESCRIPTION, "\\d*-\\d*")) 
 
 
 # sample_food <- foodinsp23_24_SSI[sample(nrow(foodinsp23_24_SSI), 300), ] 
@@ -107,5 +90,3 @@ places_vars <- get_CDCPlaces(geography='census', measure=c("DIABETES", "OBESITY"
 
 unique(places_vars$countyname)
 
-
-# ------ OSM DATA ------ #

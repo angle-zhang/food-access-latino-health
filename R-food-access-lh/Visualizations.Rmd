@@ -76,7 +76,7 @@ tm_shape(la_county) +
 
 ```{r}
 
-elev <- get_dem("los_angeles", proj_crs)
+elev <- get_dem("socal", proj_crs)
 
 ocean <- rnaturalearth::ne_download(scale = 10, type = "ocean", category = "physical", returnclass = "sf") %>%
   st_transform(proj_crs) %>%
@@ -100,9 +100,15 @@ tm_shape(elev) +
 
 ```{r}
   osm_lines <- get_osm(bbox=lac_bbox)
-  ht = c("primary", "secondary", "tertiary", "unclassified") # highway types of interest
-  osm_major_roads = osm_lines[osm_lines$highway %in% ht, ]
-  plot(osm_major_roads["highway"], key.pos = 1)
+  ht = c("raceway") # highway types to remove
+  # highway types https://wiki.openstreetmap.org/wiki/Key:highway#Roads
+  osm_paths = osm_lines[!(osm_lines$highway %in% ht), ]
+  plot(osm_paths["highway"], key.pos = 1)
+  
+  rm(osm_lines, osm_paths)
+  
+  #not enough heap space to run this 
+  #network <- street_network_to_sf(r5r_core)
 
 
 ```
