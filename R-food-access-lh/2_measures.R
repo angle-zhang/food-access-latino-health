@@ -49,116 +49,12 @@ foodinsp23_24_SSIclean <- foodinsp23_24_SSI %>%
   mutate(count=1) 
 # TODO test
 #mutate(SIZE = str_extract(PE_DESCRIPTION, "\\d*-\\d*")) 
-base_path <- "C:/Users/angie/OneDrive/Desktop/data-analysis/0_shared-data/raw/"
-processed_path <- "C:/Users/angie/OneDrive/Desktop/data-analysis/0_shared-data/processed/"
 
 
 # setup r5r
 data_path <- paste0(base_path, "osm_socal")
 
 r5r_core <- setup_r5(data_path = data_path)
-
-#r5r_sitrep()
-#Sys.timezone(location = TRUE)
-
-# split la_hh_cleaned into two datasets
-
-
-
-# # first find walkability for all points at various cutoffs
-# access_walk1 <- accessibility(r5r_core,
-#                         origins = la_hh_cleaned[1:1000000,],
-#                         destinations = foodinsp23_24_SSIclean,
-#                         opportunities_colnames = "count",
-#                         mode = "WALK",
-#                         decay_function = "step",
-#                         cutoffs = c(5, 10, 15, 20),
-#                         departure_datetime =  as.POSIXct(tz="America/Los_Angeles", "2025-03-21 18:00:00"), # 6pm on a friday
-#                         time_window = 60,
-#                         progress = F)
-# 
-# as.POSIXct(tz="America/Los_Angeles", "2025-03-21 18:00:00")
-# 
-# access_walk2 <- accessibility(r5r_core,
-#                               origins = la_hh_cleaned[1000001:2000000,],
-#                               destinations = foodinsp23_24_SSIclean,
-#                               opportunities_colnames = "count",
-#                               mode = "WALK",
-#                               decay_function = "step",
-#                               cutoffs = c(5, 10, 15, 20),
-#                               departure_datetime =  as.POSIXct(tz="America/Los_Angeles", "2025-03-21 18:00:00"), # 6pm on a friday
-#                               time_window = 60,
-#                               progress = F)
-# 
-# access_walk3 <- accessibility(r5r_core,
-#                               origins = la_hh_cleaned[2000001:3000000,],
-#                               destinations = foodinsp23_24_SSIclean,
-#                               opportunities_colnames = "count",
-#                               mode = "WALK",
-#                               decay_function = "step",
-#                               cutoffs = c(5, 10, 15, 20),
-#                               departure_datetime =  as.POSIXct(tz="America/Los_Angeles", "2025-03-21 18:00:00"), # 6pm on a friday
-#                               time_window = 60,
-#                               progress = F)
-# 
-# access_walk4 <- accessibility(r5r_core,
-#                               origins = la_hh_cleaned[3000001:nrow(la_hh_cleaned),],
-#                               destinations = foodinsp23_24_SSIclean,
-#                               opportunities_colnames = "count",
-#                               mode = "WALK",
-#                               decay_function = "step",
-#                               cutoffs = c(5, 10, 15, 20),
-#                               departure_datetime =  as.POSIXct(tz="America/Los_Angeles", "2025-03-21 18:00:00"), # 6pm on a friday
-#                               time_window = 60,
-#                               progress = F)
-# 
-# 
-# 
-# 
-# # write access_walk to file
-# write_sf(access_walk1, paste0(processed_path, "LAC_origins/access_walk1.gpkg"))
-# write_sf(access_walk2, paste0(processed_path, "LAC_origins/access_walk2.gpkg"))
-# write_sf(access_walk3, paste0(processed_path, "LAC_origins/access_walk3.gpkg"))
-# write_sf(access_walk4, paste0(processed_path, "LAC_origins/access_walk4.gpkg"))
-# 
-# # calculate accessibility for drive times for 50 points at a time in la_hh_cleaned until all points are processed
-# # use a for loop
-# # RBIND
-# 
-# access_drive = data.frame()
-# 
-# for (i in seq(1, nrow(la_hh_cleaned), 150)) {  
-#   print(i)
-#    access_drive <- accessibility(r5r_core,
-#                         origins = la_hh_cleaned[i:(i+150),],
-#                         destinations = foodinsp23_24_SSIclean,
-#                         opportunities_colnames = "count",
-#                         mode = "CAR",
-#                         decay_function = "step",
-#                         cutoffs = c(5, 10, 15, 20),
-#                         departure_datetime =  as.POSIXct(tz="America/Los_Angeles", "2025-03-21 18:00:00"), # 6pm on a friday
-#                         time_window = 60,
-#                         progress = F) %>%
-#    rbind(access_drive)
-#    
-#    
-#    
-# }
-# 
-# write_sf(access_drive, paste0(processed_path, "LAC_origins/access_drive.gpkg"))
-# 
-# 
-# access <- accessibility(r5r_core,
-#                         origins = la_hh_sample,
-#                         destinations = foodinsp23_24_SSIclean,
-#                         opportunities_colnames = "count",
-#                         mode = "WALK",
-#                         decay_function = "step",
-#                         cutoffs = c(15),
-#                         departure_datetime =  as.POSIXct("2025-03-21 18:00:00"),
-#                         time_window = 60,
-#                         progress = T)
-
 
 # function for computing accessibility measures
 compute_accessibility <- function(origins, destinations, mode, chunk_size, base_path, cutoffs = c(5, 10, 15, 20, 25, 30), colnames,
