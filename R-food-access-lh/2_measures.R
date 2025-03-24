@@ -49,6 +49,11 @@ foodinsp23_24_SSIclean <- foodinsp23_24_SSI %>%
   mutate(count=1) 
 # TODO test
 #mutate(SIZE = str_extract(PE_DESCRIPTION, "\\d*-\\d*")) 
+<<<<<<< HEAD
+=======
+base_path <- "../../0_shared-data/raw/"
+processed_path <- "../../0_shared-data/processed/"
+>>>>>>> fb91255efeea16aa9e22b459f0e272b34618fd01
 
 
 # setup r5r
@@ -57,15 +62,15 @@ data_path <- paste0(base_path, "osm_socal")
 r5r_core <- setup_r5(data_path = data_path)
 
 # function for computing accessibility measures
-compute_accessibility <- function(origins, destinations, mode, chunk_size, base_path, cutoffs = c(5, 10, 15, 20, 25, 30), colnames,
-                                  time_window = 60, departure_time = "2025-03-21 18:00:00", progress = FALSE) {
+compute_accessibility <- function(origins, destinations, mode, chunk_size, base_path, cutoffs = c(5, 10, 15, 20, 25, 30, 35, 40, 45), colnames,
+                                  time_window = 60, departure_time = "2025-03-21 18:00:00", progress = FALSE, point_type="parcel") {
                                                             
   # Convert departure time to POSIXct
   departure_time <- as.POSIXct(departure_time)
   departure_time_formatted <- format(departure_time, "%Y%m%d_%H%M")
   
   # Construct the output file name
-  output_path <- paste0(processed_path, "LAC_accessibility/", "access_", tolower(mode), "_", departure_time_formatted, ".gpkg")
+  output_path <- paste0(processed_path, "LAC_accessibility/", point_type, "_access_", tolower(mode), "_", departure_time_formatted, ".gpkg")
 
   # Get the number of rows in the origins dataset
   num_rows <- nrow(origins)
@@ -96,8 +101,7 @@ compute_accessibility <- function(origins, destinations, mode, chunk_size, base_
     # Store the chunk in the results list
     access_results[[length(access_results) + 1]] <- access_chunk_res
     # Write the output file
-    print(paste("Saving results to:", output_path))
-    write_sf(access_chunk_res, output_path, append=T)
+  
     
   }
   print("Finished processing origins")
@@ -105,7 +109,8 @@ compute_accessibility <- function(origins, destinations, mode, chunk_size, base_
   # Combine all results into a single dataframe after looping through all of them
   access_data <- bind_rows(access_results)
   
- 
+  print(paste("Saving results to:", output_path))
+  write_sf(access_data, output_path, append=F)
   print(paste("Saved results to:", output_path))
   
   return(access_data)
