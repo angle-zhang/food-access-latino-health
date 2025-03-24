@@ -2,7 +2,6 @@ download_foodins_lacounty_ssi()
 download_census_tracts(state="CA", county="Los Angeles", year=2020)
 download_census_blocks(state="CA", county="Los Angeles", year=2020)
 
-processed_path <- "C:/Users/angie/OneDrive/Desktop/data-analysis/0_shared-data/processed/"
 
 # ------ LOAD BOUNDARIES AND CRS ------ #
 # TODO get edges outside LA County
