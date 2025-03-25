@@ -25,6 +25,14 @@ la_hh_cleaned <- la_hh %>%
   mutate(id=row_number()) %>%
   mutate(lon = st_coordinates(.)[,1], lat = st_coordinates(.)[,2])
 
+la_city <- get_city_boundary(4326) 
+
+la_hh_within <- la_hh_cleaned %>%
+  filter(st_within(., la_city, sparse = FALSE) | st_intersects(., la_city, sparse = FALSE))
+
+# Check results
+print(nrow(la_hh_within))
+
 
 # ------ LOAD FOOD INSPECTION POI DATA ------ #
 # Load LA County food inspection data (2021-2024)
@@ -49,12 +57,6 @@ foodinsp23_24_SSIclean <- foodinsp23_24_SSI %>%
   mutate(count=1) 
 # TODO test
 #mutate(SIZE = str_extract(PE_DESCRIPTION, "\\d*-\\d*")) 
-<<<<<<< HEAD
-=======
-base_path <- "../../0_shared-data/raw/"
-processed_path <- "../../0_shared-data/processed/"
->>>>>>> fb91255efeea16aa9e22b459f0e272b34618fd01
-
 
 # setup r5r
 data_path <- paste0(base_path, "osm_socal")
@@ -63,7 +65,7 @@ r5r_core <- setup_r5(data_path = data_path)
 
 # function for computing accessibility measures
 compute_accessibility <- function(origins, destinations, mode, chunk_size, base_path, cutoffs = c(5, 10, 15, 20, 25, 30, 35, 40, 45), colnames,
-                                  time_window = 60, departure_time = "2025-03-21 18:00:00", progress = FALSE, point_type="parcel") {
+                                  time_window = 30, departure_time = "2025-03-21 18:00:00", progress = FALSE, point_type="parcel") {
                                                             
   # Convert departure time to POSIXct
   departure_time <- as.POSIXct(departure_time)
@@ -77,12 +79,13 @@ compute_accessibility <- function(origins, destinations, mode, chunk_size, base_
   
   # Initialize an empty list to store results
   access_results <- list()
+  very_start <- Sys.time()
   
   # Loop through the dataset in chunks
   for (i in seq(1, num_rows, by = chunk_size)) {
     # Define the end index for the current chunk
     end_idx <- min(i + chunk_size - 1, num_rows)
-    print(paste("Processing rows:", i, "to", end_idx))
+    start <- Sys.time()
     
     # Compute accessibility for the current chunk
     access_chunk_res <- accessibility(
@@ -97,28 +100,32 @@ compute_accessibility <- function(origins, destinations, mode, chunk_size, base_
       time_window = time_window,
       progress = progress
     )
+    end <- Sys.time()
+    time <- end - start
+    total_time <- end - very_start
+    print(paste("Processed rows:", i, "to", end_idx, ">>", time))
+    print(paste("Total time elapsed:", total_time))
     
     # Store the chunk in the results list
     access_results[[length(access_results) + 1]] <- access_chunk_res
-    # Write the output file
-  
+    write_sf(access_chunk_res, output_path, append=T)
+    
     
   }
-  print("Finished processing origins")
   
+  print("Finished processing origins")
   # Combine all results into a single dataframe after looping through all of them
   access_data <- bind_rows(access_results)
-  
   print(paste("Saving results to:", output_path))
   write_sf(access_data, output_path, append=F)
   print(paste("Saved results to:", output_path))
-  
   return(access_data)
+  
 }
 
 unique(foodinsp23_24_SSIclean$PE_DESCRIPTION)
 
-
+# generate access for parcels
 # todo - test time zones
 access_walk <- compute_accessibility(
   origins = la_hh_cleaned,
@@ -129,14 +136,24 @@ access_walk <- compute_accessibility(
   colnames = c("count", "small", "large")
 )
 
+
+# calculate only for households within LA city for time being 
 access_drive <- compute_accessibility(
-  origins = la_hh_cleaned,
+  origins = la_hh_cleaned[2625001:nrow(la_hh_cleaned),],
   destinations = foodinsp23_24_SSIclean,
   mode = "CAR",
-  chunk_size = 1000,
+  chunk_size = 5000,
   base_path = processed_path,
-  colnames = c("count", "small", "large")
+  cutoff=c(5, 10, 15, 20, 25),
+  colnames = c("count", "small", "large"), 
+  progress=F
 )
+
+# use two student laptops to perform analysis on datasets 
+
+print(base_path)
+access <- read_sf(paste0(processed_path, "LAC_accessibility/", "parcel_access_car_20250321_1800.gpkg"))
+nrow(access) # see progress
 
 access_drive2 <- compute_accessibility(
   origins = la_hh_cleaned[1:5000,],

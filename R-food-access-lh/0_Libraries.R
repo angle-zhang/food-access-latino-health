@@ -14,7 +14,7 @@ library(osmextract)
 # 1
 library(centr)
 
-options(java.parameters = "-Xmx56G")
+options(java.parameters = "-Xmx90G")
 library(r5r)
 
 base_path <- "../../0_shared-data/raw/"
