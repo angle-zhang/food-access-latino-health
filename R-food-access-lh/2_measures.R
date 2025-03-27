@@ -58,7 +58,7 @@ foodinsp23_24_SSIclean <- foodinsp23_24_SSI %>%
   st_transform(4326) %>% # OSM data is in 4326
   mutate(lon = GEOCODE_LONGITUDE, lat = GEOCODE_LATITUDE) %>%
   mutate(count=1) %>%
-  select(lon, lat, count, small, large, MATCH_ADDR, FACILITY_NAME, SOURCE)
+  select(OBJECTID, lon, lat, count, small, large, MATCH_ADDR, FACILITY_NAME, SOURCE)
 
 # clean data axle market data from 2023
 foodmarket_23_DA_clean <- foodmarket_23_DA %>%
@@ -67,9 +67,11 @@ foodmarket_23_DA_clean <- foodmarket_23_DA %>%
   st_transform(4326) %>% # OSM data is in 4326
   mutate(lon = st_coordinates(.)[,1], lat = st_coordinates(.)[,2]) %>%
   mutate(count=1) %>%
-  select(lon, lat, count, MATCH_ADDR, FACILITY_NAME, SOURCE)
+  select(OBJECTID, lon, lat, count, MATCH_ADDR, FACILITY_NAME, SOURCE)
   
-foodmarket_merged <- bind_rows(foodinsp23_24_SSIclean, foodmarket_23_DA_clean)
+foodmarket_merged <- bind_rows(foodinsp23_24_SSIclean, foodmarket_23_DA_clean) %>%
+  mutate(SOURCE_OBJECTID=OBJECTID,
+         id=row_number())
 
 # setup r5r
 data_path <- paste0(base_path, "osm_socal")
@@ -77,15 +79,22 @@ data_path <- paste0(base_path, "osm_socal")
 r5r_core <- setup_r5(data_path = data_path)
 
 # function for computing accessibility measures
-compute_accessibility <- function(origins, destinations, mode, chunk_size, base_path, cutoffs = c(5, 10, 15, 20, 25, 30, 35, 40, 45), colnames,
-                                  time_window = 30, departure_time = "2025-03-21 18:00:00", progress = FALSE, point_type="parcel") {
+compute_accessibility <- function(origins, destinations, mode, chunk_size, cutoffs = c(5, 10, 15, 20, 25, 30, 35, 40, 45), colnames,
+                                  origin_type, output_path, file_id=NULL, # used to keep track of files being generated on multiple machines
+                                  time_window = 30, departure_time = "2025-03-21 18:00:00", progress = FALSE) {
                                                             
   # Convert departure time to POSIXct
   departure_time <- as.POSIXct(departure_time)
   departure_time_formatted <- format(departure_time, "%Y%m%d_%H%M")
   
   # Construct the output file name
-  output_path <- paste0(processed_path, "LAC_accessibility/", point_type, "_access_", tolower(mode), "_", departure_time_formatted, ".csv")
+  if (is.null(file_id)) {
+    file_name <- paste0(origin_type, "_", mode, departure_time_formatted, ".csv")
+    output_file <- paste0(output_path, file_name)
+  } else {
+    file_name <- paste0(origin_type, "_", mode, departure_time_formatted, "_", file_id, ".csv")
+    output_file <- paste0(output_path, file_name)
+  }
 
   # Get the number of rows in the origins dataset
   num_rows <- nrow(origins)
@@ -119,57 +128,80 @@ compute_accessibility <- function(origins, destinations, mode, chunk_size, base_
     print(paste("Processed rows:", i, "to", end_idx, ">>", time))
     print(paste("Total time elapsed:", total_time))
     
-    # Store the chunk in the results list
+    # Store the chunk in the results list, TODO check if this breaks down based on file size
     access_results[[length(access_results) + 1]] <- access_chunk_res
-    write.csv(access_chunk_res, output_path, append=T)
-    
-    
+    write.table(access_chunk_res, sep=",", output_file, append=T)
   }
   
   print("Finished processing origins")
-  # Combine all results into a single dataframe after looping through all of them
+  # Combine all results into a single dataframe after looping through all of them (may be too large of an operation?)
   access_data <- bind_rows(access_results)
-  print(paste("Saving results to:", output_path))
-  write_sf(access_data, output_path, append=F)
-  print(paste("Saved results to:", output_path))
+  # print(paste("Saving results to:", output_path))
+  # write.csv(access_data, output_file, append=F)
+  # print(paste("Saved results to:", output_path))
   return(access_data)
   
 }
 
 unique(foodinsp23_24_SSIclean$PE_DESCRIPTION)
 
-# generate access for parcels
-# todo - test time zones
-# access_walk <- compute_accessibility(
-#   origins = la_hh_cleaned,
-#   destinations = foodinsp23_24_SSIclean,
-#   mode = "WALK",
-#   chunk_size = 500000,
-#   base_path = processed_path, 
-#   colnames = c("count", "small", "large")
-# )
+access_path <- paste0(processed_path, "LAC_accessibility")
 
+# TODO move this to a different file (e.g. helpers)
+setup_access_measure_folders <- function(access_path) { 
+  # Setup folder structure 
+  measures <- c("proximity", "density", "ratio", "gravity")
+  geographies <- c("la_city", "la_county")
+  categories <- c("all_markets")
+  
+  dir.create(access_path)
+  
+  # create folder for each measure and a folder within each measure for each geography
+  for (measure in measures) {
+    measure_path <- paste(access_path, measure, sep="/")
+    for (geography in geographies) dir.create(paste(measure_path, geography, sep="/"), recursive=T)
+  }
+  
+}
+
+# TODO move this to a different file (e.g. helpers)
 # turn this into function calculating chunk size
-calc_chunk_size <- function(ram) { 
+calc_chunk_size <- function(ram, mode) { 
   # chunk size
-  dt_chunk <- 5000 # DRIVE TIME CHUNK SIZE  for 128 GB ram
+  if (mode == "WALK") dt_chunk <- 1000000 # WALK TIME CHUNK SIZE for 128 GB ram
+  else if (mode == "CAR") dt_chunk <- 4500 # DRIVE TIME CHUNK SIZE  for 128 GB ram
   proportion <- ram/128
   chunk_size <- floor(dt_chunk * proportion)  
   return(chunk_size)
 }
 
+
+# Compute values for LA CITY Parcels
+# generate access for parcels
+access_walk <- compute_accessibility(
+  origins = la_city_hh[1:90000,] ,
+  destinations = foodmarket_merged,
+  mode = "WALK",
+  chunk_size = calc_chunk_size(ram=12, mode="WALK"),
+  output_path = paste(access_path, "density/la_city/", sep="/"),
+  origin_type = "parcel",
+  colnames = c("count", "small", "large")
+)
+
 # calculate only for households within LA city
 # calculate access to all markets
+# subdivide data into two datasets for running on separate devices
+
 access_drive <- compute_accessibility(
   origins = la_city_hh,
   destinations = foodmarket_merged,
   mode = "CAR",
-  chunk_size = calc_chunk_size(ram=16),
-  base_path = processed_path,
+  chunk_size = calc_chunk_size(ram=64, mode="CAR"),
   cutoff=c(5, 10, 15, 20, 25),
   colnames = c("count"), 
   progress=F,
-  point_type="parcel_LACITY_allpoi",
+  output_path=paste0(processed_path, "density/la_city/"),
+  file_id=1
 )
 
  
