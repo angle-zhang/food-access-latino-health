@@ -97,8 +97,10 @@ compute_accessibility <- function(origins, destinations, mode, chunk_size, cutof
   }
   
   # Create the output file if it doesn't exist
+  if(!file.exists(output_file)){
+    file.create(output_file)  
+  }
   
-  file.create(output_file)  
   # Get the number of rows in the origins dataset
   num_rows <- nrow(origins)
   
@@ -206,21 +208,21 @@ calc_chunk_size <- function(ram, mode) {
 # DEVICE 1
 split <- round(seq(15795, nrow(la_city_hh), length.out=6))
 
-split[1]
+split[6]
 
 typeof(la_city_hh)
 
 access_drive <- compute_accessibility(
-  origins = la_city_hh[split[1]:split[2],],
+  origins = la_city_hh[split[2]:split[6],],
   destinations = foodmarket_merged,
   mode = "CAR",
-  chunk_size = calc_chunk_size(ram=10, mode="CAR"),
+  chunk_size = calc_chunk_size(ram=120, mode="CAR"),
   cutoff=c(5, 10, 15, 20, 25),
   colnames = c("count"), 
   progress=F,
   output_path=paste0(access_path, "/density/la_city", sep="/"),
   origin_type = "parcel",
-  file_id=1
+  file_id=2 # change based on device number
 )
 
 
