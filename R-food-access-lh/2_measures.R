@@ -1,5 +1,5 @@
 source("0_Libraries.R")
-
+setwd("C:/Users/angie/OneDrive/Desktop/data-analysis/food-access-latino-health/R-food-access-lh")
 
 # ------ CALCULATE PROXIMITY MEASURES ------ #
 proximity_measure <- function (pop_cent, poi, mode='classic') {
@@ -95,7 +95,10 @@ compute_accessibility <- function(origins, destinations, mode, chunk_size, cutof
     file_name <- paste0(origin_type, "_", mode, departure_time_formatted, "_", file_id, ".csv")
     output_file <- paste0(output_path, file_name)
   }
-
+  
+  # Create the output file if it doesn't exist
+  
+  file.create(output_file)  
   # Get the number of rows in the origins dataset
   num_rows <- nrow(origins)
   
@@ -130,7 +133,7 @@ compute_accessibility <- function(origins, destinations, mode, chunk_size, cutof
     
     # Store the chunk in the results list, TODO check if this breaks down based on file size
     access_results[[length(access_results) + 1]] <- access_chunk_res
-    write.table(access_chunk_res, sep=",", output_file, append=T)
+    write.table(access_chunk_res, sep=",", output_file, col.names=NA, append=T)
   }
   
   print("Finished processing origins")
@@ -143,7 +146,6 @@ compute_accessibility <- function(origins, destinations, mode, chunk_size, cutof
   
 }
 
-unique(foodinsp23_24_SSIclean$PE_DESCRIPTION)
 
 access_path <- paste0(processed_path, "LAC_accessibility")
 
@@ -175,37 +177,55 @@ calc_chunk_size <- function(ram, mode) {
   return(chunk_size)
 }
 
-
 # Compute values for LA CITY Parcels
 # generate access for parcels
-access_walk <- compute_accessibility(
-  origins = la_city_hh[1:90000,] ,
-  destinations = foodmarket_merged,
-  mode = "WALK",
-  chunk_size = calc_chunk_size(ram=12, mode="WALK"),
-  output_path = paste(access_path, "density/la_city/", sep="/"),
-  origin_type = "parcel",
-  colnames = c("count", "small", "large")
-)
+# access_walk <- compute_accessibility(
+#   origins = la_city_hh,
+#   destinations = foodmarket_merged,
+#   mode = "WALK",
+#   chunk_size =calc_chunk_size(ram=12, mode="WALK"),  #calc_chunk_size(ram=12, mode="WALK"),
+#   output_path = paste(access_path, "density/la_city/", sep="/"),
+#   origin_type = "parcel",
+#   colnames = c("count", "small", "large")
+# )
+
+# TODO add this to a function 
+# get ids in la_city_hh that are not in parcel walk
+# missing_id <- la_city_hh[!(la_city_hh$id %in% parcel_WALK20250321_1800$id),]
+# 
+# # make sure # matches
+# length(unique(la_city_hh$id))
+# length(unique(parcel_WALK20250321_1800$id))
+# 
+# # get number of NAs in parcel walk
+# sum(is.na(parcel_WALK20250321_1800$id))
 
 # calculate only for households within LA city
 # calculate access to all markets
-# subdivide data into two datasets for running on separate devices
+# subdivide hh data into two datasets for running on separate devices based on number of devices
+# DEVICE 1
+split <- round(seq(15795, nrow(la_city_hh), length.out=6))
+
+split[1]
+
+typeof(la_city_hh)
 
 access_drive <- compute_accessibility(
-  origins = la_city_hh,
+  origins = la_city_hh[split[1]:split[2],],
   destinations = foodmarket_merged,
   mode = "CAR",
-  chunk_size = calc_chunk_size(ram=64, mode="CAR"),
+  chunk_size = calc_chunk_size(ram=10, mode="CAR"),
   cutoff=c(5, 10, 15, 20, 25),
   colnames = c("count"), 
   progress=F,
-  output_path=paste0(processed_path, "density/la_city/"),
+  output_path=paste0(access_path, "/density/la_city", sep="/"),
+  origin_type = "parcel",
   file_id=1
 )
 
+
  
 # check progress 
-print(base_path)
-access <- read_sf(paste0(processed_path, "LAC_accessibility/", "parcel_access_car_20250321_1800.gpkg"))
-nrow(access) # see progress
+# print(base_path)
+# access <- read_sf(paste0(processed_path, "LAC_accessibility/", "parcel_access_car_20250321_1800.gpkg"))
+# nrow(access) # see progress
