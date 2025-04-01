@@ -247,7 +247,7 @@ split <- round(seq(15795, nrow(la_city_hh), length.out=6))
 split[1]
 split[2]
 
-#device #3 split[3] +  28851 - split [4] -1
+#d evice #3 split[3] +  28851 - split [4] -1
 # device #4 split[4] - split[5]
 
 typeof(la_city_hh)
@@ -262,7 +262,7 @@ split[6]- split[5]
 
 # finished 1-2 and 5-6
 access_drive <- compute_accessibility(
-  origins = la_city_hh[split[4]+206344:split[5],],
+  origins = la_city_hh[split[3] + 28851:split[5],],
   destinations = foodmarket_merged,
   mode = "CAR",
   chunk_size = calc_chunk_size(ram=7, mode="CAR"),
@@ -271,7 +271,7 @@ access_drive <- compute_accessibility(
   progress=F,
   output_path=paste0(access_path, "/density/la_city", sep="/"),
   origin_type = "parcel", #should be parcel
-  file_id=1
+  file_id=3
 ) #TODO rename this file and make sure the file names are never replaced this way...
 
 # access_drive <- compute_accessibility(
