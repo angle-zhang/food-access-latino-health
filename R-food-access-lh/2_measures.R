@@ -1,5 +1,4 @@
 source("0_Libraries.R")
-setwd("C:/Users/angie/OneDrive/Desktop/data-analysis/food-access-latino-health/R-food-access-lh")
 
 # ------ CALCULATE PROXIMITY MEASURES ------ #
 proximity_measure <- function (pop_cent, poi, mode='classic') {
@@ -15,7 +14,7 @@ proximity_measure <- function (pop_cent, poi, mode='classic') {
   pop_cent$nearest_dist <- dist
 }
 
-
+# ------ LOAD ORIGINS ------ #
 # get household points from parcel data
 la_hh <- get_lac_households(proj_crs) #
 
@@ -35,6 +34,18 @@ la_city_hh <- la_hh_cleaned %>%
 print(nrow(la_hh_cleaned))
 print(nrow(la_city_hh))
 
+
+# get census tract centroids and transform them to correct format
+la_ctcent_dat <- get_lac_centroids() %>%
+  st_transform(4326) %>% # OSM data is in 4326
+  mutate(id=row_number()) %>%
+  mutate(lon = st_coordinates(.)[,1], lat = st_coordinates(.)[,2])
+
+# get pop weighted centroids 
+la_ct_wtcent_dat <- get_lac_weight_centroids() %>%
+  st_transform(4326) %>% # OSM data is in 4326
+  mutate(id=row_number()) %>%
+  mutate(lon = st_coordinates(.)[,1], lat = st_coordinates(.)[,2])
 
 # ------ LOAD FOOD MARKET POI DATA ------ #
 # Load LA County food inspection data (2021-2024)
@@ -73,6 +84,7 @@ foodmarket_merged <- bind_rows(foodinsp23_24_SSIclean, foodmarket_23_DA_clean) %
   mutate(SOURCE_OBJECTID=OBJECTID,
          id=row_number())
 
+#!file.exists('../../0_shared-data/processed/LAC_accessibility/density/la_city/parcel_CAR20250321_1800_1.csv')
 # setup r5r
 data_path <- paste0(base_path, "osm_socal")
 
@@ -96,14 +108,16 @@ compute_accessibility <- function(origins, destinations, mode, chunk_size, cutof
     output_file <- paste0(output_path, file_name)
   }
   
-  # Create the output file if it doesn't exist
+  # Only create the output file if it doesn't exist
+  if(!file.exists(output_file)){
+    print("Output file doesn't exist, creating now")
+    file.create(output_file)  
+  }
   
-  file.create(output_file)  
   # Get the number of rows in the origins dataset
   num_rows <- nrow(origins)
   
   # Initialize an empty list to store results
-  access_results <- list()
   very_start <- Sys.time()
   
   # Loop through the dataset in chunks
@@ -132,21 +146,20 @@ compute_accessibility <- function(origins, destinations, mode, chunk_size, cutof
     print(paste("Total time elapsed:", total_time))
     
     # Store the chunk in the results list, TODO check if this breaks down based on file size
-    access_results[[length(access_results) + 1]] <- access_chunk_res
     write.table(access_chunk_res, sep=",", output_file, col.names=NA, append=T)
   }
-  
   print("Finished processing origins")
   # Combine all results into a single dataframe after looping through all of them (may be too large of an operation?)
-  access_data <- bind_rows(access_results)
+  #access_data <- bind_rows(access_results)
   # print(paste("Saving results to:", output_path))
   # write.csv(access_data, output_file, append=F)
   # print(paste("Saved results to:", output_path))
-  return(access_data)
+  return(output_file)
   
 }
 
 
+# 
 access_path <- paste0(processed_path, "LAC_accessibility")
 
 # TODO move this to a different file (e.g. helpers)
@@ -189,6 +202,30 @@ calc_chunk_size <- function(ram, mode) {
 #   colnames = c("count", "small", "large")
 # )
 
+# Compute values for LA CITY Parcels
+# generate access for parcels
+# access_walk <- compute_accessibility(
+#   origins = la_ctcent_dat,
+#   destinations = foodmarket_merged,
+#   mode = "WALK",
+#   chunk_size =calc_chunk_size(ram=8, mode="WALK"),  #calc_chunk_size(ram=12, mode="WALK"),
+#   output_path = paste(access_path, "density/la_city/", sep="/"),
+#   origin_type = "ct_cent",
+#   colnames = c("count", "small", "large")
+# )
+# 
+# access_walk <- compute_accessibility(
+#   origins = la_ct_wtcent_dat,
+#   destinations = foodmarket_merged,
+#   mode = "WALK",
+#   chunk_size =calc_chunk_size(ram=8, mode="WALK"),  #calc_chunk_size(ram=12, mode="WALK"),
+#   output_path = paste(access_path, "density/la_city/", sep="/"),
+#   origin_type = "ct_wtcent",
+#   colnames = c("count", "small", "large")
+# )
+
+
+
 # TODO add this to a function 
 # get ids in la_city_hh that are not in parcel walk
 # missing_id <- la_city_hh[!(la_city_hh$id %in% parcel_WALK20250321_1800$id),]
@@ -204,28 +241,70 @@ calc_chunk_size <- function(ram, mode) {
 # calculate access to all markets
 # subdivide hh data into two datasets for running on separate devices based on number of devices
 # DEVICE 1
+nrow(la_city_hh)
 split <- round(seq(15795, nrow(la_city_hh), length.out=6))
 
 split[1]
+split[2]
+
+#device #3 split[3] +  28851 - split [4] -1
+# device #4 split[4] - split[5]
 
 typeof(la_city_hh)
+match(560452, la_city_hh$id)
 
+# TODO Map all the data inputs so see errors/ issues 
+# TODO isolate small region in LA to test on 
+# [x] TODO run code for other orgins (CTs, Weighted CTs)
+#TODO change return value of access_drive to index?
+split[6]- split[5]
+
+
+# finished 1-2 and 5-6
 access_drive <- compute_accessibility(
-  origins = la_city_hh[split[1]:split[2],],
+  origins = la_city_hh[split[4]+206344:split[5],],
   destinations = foodmarket_merged,
   mode = "CAR",
-  chunk_size = calc_chunk_size(ram=10, mode="CAR"),
+  chunk_size = calc_chunk_size(ram=7, mode="CAR"),
   cutoff=c(5, 10, 15, 20, 25),
-  colnames = c("count"), 
+  colnames = c("count"),
   progress=F,
   output_path=paste0(access_path, "/density/la_city", sep="/"),
-  origin_type = "parcel",
+  origin_type = "parcel", #should be parcel
   file_id=1
-)
+) #TODO rename this file and make sure the file names are never replaced this way...
+
+# access_drive <- compute_accessibility(
+#   origins = la_ctcent_dat,
+#   destinations = foodmarket_merged,
+#   mode = "CAR",
+#   chunk_size = calc_chunk_size(ram=8, mode="CAR"),
+#   cutoff=c(5, 10, 15, 20, 25),
+#   colnames = c("count"),
+#   progress=F,
+#   output_path=paste0(access_path, "/density/la_city", sep="/"),
+#   origin_type = "ct_cent"
+# )
+
+# access_drive <- compute_accessibility(
+#   origins = la_ct_wtcent_dat,
+#   destinations = foodmarket_merged,
+#   mode = "CAR",
+#   chunk_size = calc_chunk_size(ram=8, mode="CAR"),
+#   cutoff=c(5, 10, 15, 20, 25),
+#   colnames = c("count"),
+#   progress=F,
+#   output_path=paste0(access_path, "/density/la_city", sep="/"),
+#   origin_type = "ct_wtcent"
+# )
 
 
- 
 # check progress 
 # print(base_path)
-# access <- read_sf(paste0(processed_path, "LAC_accessibility/", "parcel_access_car_20250321_1800.gpkg"))
-# nrow(access) # see progress
+ access <- read.csv(paste0(processed_path, "LAC_accessibility/density/la_city/", "ct_cent_CAR20250321_1800_1.csv"))
+ access$id <- as.numeric(access$id) 
+ access <- access[!is.na(access$id),]
+ offset <- nrow(access)/5
+ 
+ # find all ids for index betwen split 1 and split 2 tht are not in access 
+ sub <- la_city_hh[split[2]:split[6],][!(la_city_hh$id %in% access$id),]
