@@ -49,12 +49,6 @@ write_sf(la_ct_wtcent_dat, paste0(processed_path, "LAC_origins/la_ct_wtcent_dat3
 
 write_sf(la_ctcent_dat, paste0(processed_path, "LAC_origins/la_ctcent_dat3182025.gpkg"))
 
-get_lac_weight_centroids <- function() {
-  return(st_read(paste0(processed_path, "LAC_origins/la_ct_wtcent_dat3182025.gpkg")))
-}
-get_lac_centroids <- function() {
-  return(st_read(paste0(processed_path, "LAC_origins/la_ctcent_dat3182025.gpkg")))
-}
 
 la_ct_wtcent_dat <- get_lac_weight_centroids()
 la_ctcent_dat <- get_lac_centroids()
