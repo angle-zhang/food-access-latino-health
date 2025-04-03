@@ -24,6 +24,10 @@ la_hh_cleaned <- la_hh %>%
   mutate(id=row_number()) %>%
   mutate(lon = st_coordinates(.)[,1], lat = st_coordinates(.)[,2])
 
+# save processed data
+# to-do wrap in function
+write.csv(la_hh_cleaned, paste0(processed_path, "/LAC_origins/la_hh_cleaned.csv"))
+
 la_city <- get_city_boundary(4326)
 tm_shape(la_city) + tm_borders() # inspect city
 
@@ -158,10 +162,6 @@ compute_accessibility <- function(origins, destinations, mode, chunk_size, cutof
   
 }
 
-
-# 
-access_path <- paste0(processed_path, "LAC_accessibility")
-
 # TODO move this to a different file (e.g. helpers)
 setup_access_measure_folders <- function(access_path) { 
   # Setup folder structure 
@@ -247,7 +247,7 @@ split <- round(seq(15795, nrow(la_city_hh), length.out=6))
 split[1]
 split[2]
 
-#device #3 split[3] +  28851 - split [4] -1
+#d evice #3 split[3] +  28851 - split [4] -1
 # device #4 split[4] - split[5]
 
 typeof(la_city_hh)
@@ -262,7 +262,7 @@ split[6]- split[5]
 
 # finished 1-2 and 5-6
 access_drive <- compute_accessibility(
-  origins = la_city_hh[split[4]+206344:split[5],],
+  origins = la_city_hh[split[3] + 28851:split[5],],
   destinations = foodmarket_merged,
   mode = "CAR",
   chunk_size = calc_chunk_size(ram=7, mode="CAR"),
@@ -271,7 +271,7 @@ access_drive <- compute_accessibility(
   progress=F,
   output_path=paste0(access_path, "/density/la_city", sep="/"),
   origin_type = "parcel", #should be parcel
-  file_id=1
+  file_id=3
 ) #TODO rename this file and make sure the file names are never replaced this way...
 
 # access_drive <- compute_accessibility(
@@ -308,3 +308,7 @@ access_drive <- compute_accessibility(
  
  # find all ids for index betwen split 1 and split 2 tht are not in access 
  sub <- la_city_hh[split[2]:split[6],][!(la_city_hh$id %in% access$id),]
+ 
+ 
+ 
+ 
