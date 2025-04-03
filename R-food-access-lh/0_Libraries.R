@@ -8,6 +8,7 @@ library(sf)
 library(tigris)
 library(dplyr)
 library(osmextract)
+library(data.table)
 
 
 
@@ -17,8 +18,10 @@ library(centr)
 options(java.parameters = "-Xmx8G")
 library(r5r)
 
+# paths
 base_path <- "../../0_shared-data/raw/"
 processed_path <- "../../0_shared-data/processed/"
+access_path <- paste0(processed_path, "LAC_accessibility")
 
 source('./helper/universal_variables.R')
 source('./helper/data_functions.R')
