@@ -6,7 +6,8 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+# run summarize measures
+source('2_summarize_measures')
 ```
 
 ## R Markdown
