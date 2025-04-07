@@ -36,16 +36,16 @@ print(nrow(la_city_hh))
 
 
 # get census tract centroids and transform them to correct format
-la_ctcent_dat <- get_lac_centroids() %>%
-  st_transform(4326) %>% # OSM data is in 4326
-  mutate(id=row_number()) %>%
-  mutate(lon = st_coordinates(.)[,1], lat = st_coordinates(.)[,2])
+# la_ctcent_dat <- get_lac_centroids() %>%
+#   st_transform(4326) %>% # OSM data is in 4326
+#   mutate(id=row_number()) %>%
+#   mutate(lon = st_coordinates(.)[,1], lat = st_coordinates(.)[,2])
 
 # get pop weighted centroids 
-la_ct_wtcent_dat <- get_lac_weight_centroids() %>%
-  st_transform(4326) %>% # OSM data is in 4326
-  mutate(id=row_number()) %>%
-  mutate(lon = st_coordinates(.)[,1], lat = st_coordinates(.)[,2])
+# la_ct_wtcent_dat <- get_lac_weight_centroids() %>%
+#   st_transform(4326) %>% # OSM data is in 4326
+#   mutate(id=row_number()) %>%
+#   mutate(lon = st_coordinates(.)[,1], lat = st_coordinates(.)[,2])
 
 # ------ LOAD FOOD MARKET POI DATA ------ #
 # Load LA County food inspection data (2021-2024)
@@ -192,16 +192,19 @@ calc_chunk_size <- function(ram, mode) {
 
 # Compute values for LA CITY Parcels
 # generate access for parcels
-# access_walk <- compute_accessibility(
-#   origins = la_city_hh,
-#   destinations = foodmarket_merged,
-#   mode = "WALK",
-#   chunk_size =calc_chunk_size(ram=12, mode="WALK"),  #calc_chunk_size(ram=12, mode="WALK"),
-#   output_path = paste(access_path, "density/la_city/", sep="/"),
-#   origin_type = "parcel",
-#   colnames = c("count", "small", "large")
-# )
+access_walk <- compute_accessibility(
+  origins = la_city_hh,
+  destinations = foodmarket_merged,
+  mode = "WALK",
+  cutoffs = seq(.1, 45, by=.1),
+  chunk_size =calc_chunk_size(ram=34, mode="WALK"),  #calc_chunk_size(ram=12, mode="WALK"),
+  output_path = paste(access_path, "density/la_city/", sep="/"),
+  origin_type = "parcel",
+  colnames = c("count", "small", "large"),
+  file_id=3
+)
 
+split[6]
 # Compute values for LA CITY Parcels
 # generate access for parcels
 # access_walk <- compute_accessibility(
@@ -260,19 +263,21 @@ match(560452, la_city_hh$id)
 split[6]- split[5]
 
 
+la_diff <- la_hh_cleaned[!(la_hh_cleaned$id %in% la_city_hh$id),]
+
 # finished 1-2 and 5-6
 access_drive <- compute_accessibility(
-  origins = la_city_hh[split[3] + 28851:split[5],],
+  origins = la_hh_cleaned,
   destinations = foodmarket_merged,
   mode = "CAR",
-  chunk_size = calc_chunk_size(ram=7, mode="CAR"),
+  chunk_size = calc_chunk_size(ram=38, mode="CAR"),
   cutoff=c(5, 10, 15, 20, 25),
   colnames = c("count"),
   progress=F,
-  output_path=paste0(access_path, "/density/la_city", sep="/"),
+  output_path=paste0(access_path, "/density/la_county", sep="/"),
   origin_type = "parcel", #should be parcel
   file_id=3
-) #TODO rename this file and make sure the file names are never replaced this way...
+) 
 
 # access_drive <- compute_accessibility(
 #   origins = la_ctcent_dat,
@@ -297,11 +302,12 @@ access_drive <- compute_accessibility(
 #   output_path=paste0(access_path, "/density/la_city", sep="/"),
 #   origin_type = "ct_wtcent"
 # )
+ 
 
 
 # check progress 
 # print(base_path)
- access <- read.csv(paste0(processed_path, "LAC_accessibility/density/la_city/", "ct_cent_CAR20250321_1800_1.csv"))
+ access <- read.csv(paste0(processed_path, "LAC_accessibility/density/la_city/", "parcel_CAR20250321_1800_3.csv"))
  access$id <- as.numeric(access$id) 
  access <- access[!is.na(access$id),]
  offset <- nrow(access)/5

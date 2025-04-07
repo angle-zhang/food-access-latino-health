@@ -14,11 +14,16 @@ library(osmextract)
 # 1
 library(centr)
 
-options(java.parameters = "-Xmx8G")
+# run once - only for SSI computers
+library(rJavaEnv)
+# java_quick_install(version = 21)
+Sys.setenv(JAVA_HOME="C:\\Users\\lab.DTS-MJ0LQJJJ\\AppData\\Local//R//cache//R//rJavaEnv//installed//windows//x64//21")
+java_check_version_rjava()
+options(java.parameters = "-Xmx38G")
 library(r5r)
 
-base_path <- "../../0_shared-data/raw/"
-processed_path <- "../../0_shared-data/processed/"
+base_path <- "D:/data-analysis/0_shared-data/raw/"
+processed_path <- "D:/data-analysis/0_shared-data/processed/"
 
 source('./helper/universal_variables.R')
 source('./helper/data_functions.R')
