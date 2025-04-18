@@ -19,8 +19,8 @@ options(java.parameters = "-Xmx8G")
 library(r5r)
 
 # paths
-base_path <- "../../0_shared-data/raw/"
-processed_path <- "../../0_shared-data/processed/"
+base_path <- "../../0_shared-data/food-environment-measures/raw/"
+processed_path <- "../../0_shared-data/food-environment-measures/processed/"
 access_path <- paste0(processed_path, "LAC_accessibility")
 
 source('./helper/universal_variables.R')

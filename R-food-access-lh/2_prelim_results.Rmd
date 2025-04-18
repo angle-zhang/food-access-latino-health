@@ -6,22 +6,127 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
+source("0_Libraries.R")
 # run summarize measures
-source('2_summarize_measures')
+# source('2_summarize_measures')
 ```
 
 ## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
 ```{r cars}
-summary(cars)
+# visualize ct_level data
+read.csv(paste0(processed_path, "/LAC_cleaned/ct_driving_times.csv")) 
+
+la_ct <- get_census_tracts(proj_crs, state="CA", year=2020, county="Los Angeles") %>%
+  mutate(GEOID = as.numeric(GEOID)) 
+# map census tract data 
+# merge census tracts
+# filter any missing data
+ct_drive_data <- la_ct %>%
+  merge(read.csv(paste0(processed_path, "/LAC_cleaned/ct_driving_times.csv")) , by = "GEOID") %>%
+  filter(!is.na(driving_count_5_parcel_mean)) 
+
+# plot census tract data
+tm_shape(ct_drive_data) +
+  tm_polygons(col = "driving_count_5_parcel_mean", style = "quantile", palette = "Blues") 
+
+tm_shape(ct_drive_data) +
+  tm_polygons(col = "driving_count_5_ct_cent", style = "quantile", palette = "Blues") 
+
+tm_shape(ct_drive_data) +
+  tm_polygons(col = "driving_count_5_ct_wtcent", style = "quantile", palette = "Blues")
+
 ```
 
-## Including Plots
+```{r}
 
+hist(ct_drive_data$driving_count_5_parcel_mean, breaks = 50, main = "Histogram", xlab = "Markets with 5 minutes driving time", col = "lightblue")
+
+hist(ct_drive_data$driving_count_5_ct_cent, breaks = 50, main = "Histogram", xlab = "Markets with 5 minutes driving time", col = "lightblue")
+
+hist(ct_drive_data$driving_count_5_ct_wtcent, breaks = 50, main = "Histogram", xlab = "Markets with 5 minutes driving time", col = "lightblue")
+
+# run histogram for each time using for loop
+for(i in c(5, 10, 15, 20, 25)) {
+  # histogram
+    par(mfrow=c(,3))
+
+  # make text smaller
+  par(cex.main=0.5)
+  hist(ct_drive_data[[paste0("driving_count_", i, "_parcel_mean")]], breaks = 50, main = paste0("Histogram of Markets with ", i, " minutes driving time"), col = "lightblue")
+  
+  hist(ct_drive_data[[paste0("driving_count_", i, "_ct_cent")]], breaks = 50, main = paste0("Histogram of Markets with ", i, " minutes driving time"), col = "lightblue")
+  
+  hist(ct_drive_data[[paste0("driving_count_", i, "_ct_wtcent")]], breaks = 50, main = paste0("Histogram of Markets with ", i, " minutes driving time"), col = "lightblue")
+# display all in one panel
+
+  }
+
+```
+
+```{r}
+
+
+
+```
+
+
+
+```{r}
+  # populate table
+  t_test_results <- rbind(t_test_results, data.frame(
+    time = i,
+    t_test_parcel_cent = t.test(
+      ct_drive_data[[paste0("driving_count_", i, "_parcel_mean")]], 
+      ct_drive_data[[paste0("driving_count_", i, "_ct_cent")]], 
+      paired = TRUE)$p.value,
+    t_test_parcel_wtcent = t.test(
+      ct_drive_data[[paste0("driving_count_", i, "_parcel_mean")]], 
+      ct_drive_data[[paste0("driving_count_", i, "_ct_wtcent")]], 
+      paired = TRUE)$p.value,
+    t_test_cent_wtcent = t.test(
+      ct_drive_data[[paste0("driving_count_", i, "_ct_cent")]], 
+      ct_drive_data[[paste0("driving_count_", i, "_ct_wtcent")]], 
+      paired = TRUE)$p.value,
+    wilcoxon_parcel_cent = wilcox.test(
+      ct_drive_data[[paste0("driving_count_", i, "_parcel_mean")]], 
+      ct_drive_data[[paste0("driving_count_", i, "_ct_cent")]], 
+      paired = TRUE)$p.value,
+    wilcoxon_parcel_wtcent = wilcox.test(
+      ct_drive_data[[paste0("driving_count_", i, "_parcel_mean")]], 
+      ct_drive_data[[paste0("driving_count_", i, "_ct_wtcent")]], 
+      paired = TRUE)$p.value,
+    wilcoxon_cent_wtcent = wilcox.test(
+      ct_drive_data[[paste0("driving_count_", i, "_ct_cent")]], 
+      ct_drive_data[[paste0("driving_count_", i, "_ct_wtcent")]], 
+      paired = TRUE)$p.value
+  ))
+  }
+```
+
+```{r}
+# walk data
+tmp_walk <- read.csv(paste0(processed_path, "/LAC_cleaned/ct_walking_times.csv")) 
+ct_walk_data <- la_ct %>%
+  merge(tmp_walk, by = "GEOID") %>%
+  filter(!is.na(walking_count_15_parcel_mean)) 
+
+# plot census tract data
+tm_shape(ct_walk_data) +
+  tm_polygons(col = "walking_count_5_parcel_mean", style = "quantile", palette = "Blues") +
+  tm_layout(title = "Census Tract Walking Times to Grocery Stores")
+
+tm_shape(ct_walk_data) +
+  tm_polygons(col = "walking_count_15_parcel_mean", style = "quantile", palette = "Blues") +
+  tm_layout(title = "Census Tract Walking Times to Grocery Stores")
+
+tm_shape(ct_walk_data) +
+  tm_polygons(col = "walking_count_30_parcel_mean", style = "quantile", palette = "Blues") +
+  tm_layout(title = "Census Tract Walking Times to Grocery Stores")
+
+## Including Plots
+```
 You can also embed plots, for example:
 
 ```{r pressure, echo=FALSE}
