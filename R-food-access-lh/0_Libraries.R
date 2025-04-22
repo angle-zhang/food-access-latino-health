@@ -8,6 +8,7 @@ library(sf)
 library(tigris)
 library(dplyr)
 library(osmextract)
+library(data.table)
 
 
 
@@ -24,6 +25,7 @@ library(r5r)
 
 base_path <- "D:/data-analysis/0_shared-data/raw/"
 processed_path <- "D:/data-analysis/0_shared-data/processed/"
+access_path <- paste0(processed_path, "LAC_accessibility")
 
 source('./helper/universal_variables.R')
 source('./helper/data_functions.R')

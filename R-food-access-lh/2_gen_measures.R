@@ -24,6 +24,11 @@ la_hh_cleaned <- la_hh %>%
   mutate(id=row_number()) %>%
   mutate(lon = st_coordinates(.)[,1], lat = st_coordinates(.)[,2])
 
+# save processed data
+# to-do wrap in function
+write.csv(la_hh_cleaned, paste0(processed_path, "/LAC_origins/la_hh_cleaned.csv"))
+rm(la_hh)
+
 la_city <- get_city_boundary(4326)
 tm_shape(la_city) + tm_borders() # inspect city
 
@@ -41,48 +46,22 @@ print(nrow(la_city_hh))
 #   mutate(id=row_number()) %>%
 #   mutate(lon = st_coordinates(.)[,1], lat = st_coordinates(.)[,2])
 
+# make key for id and geoid
+la_ct_key <- la_ctcent_dat %>%
+  select(id, GEOID) %>%
+  st_drop_geometry()
+
+# save key to processed data
+write.csv(la_ct_key, paste0(processed_path, "/LAC_origins/la_ct_key.csv"))
+
 # get pop weighted centroids 
-# la_ct_wtcent_dat <- get_lac_weight_centroids() %>%
-#   st_transform(4326) %>% # OSM data is in 4326
-#   mutate(id=row_number()) %>%
-#   mutate(lon = st_coordinates(.)[,1], lat = st_coordinates(.)[,2])
 
-# ------ LOAD FOOD MARKET POI DATA ------ #
-# Load LA County food inspection data (2021-2024)
-foodinsp_21_24 <- get_foodinsp_lacounty()
-
-# Load LA County food inspection data (2023-2024) from SSI
-foodinsp23_24_SSI <- get_foodins_lacounty_ssi(proj_crs)
-foodmarket_23_DA <- get_retail_food_markets_LB_PAS(proj_crs)
-
-# remove duplicates with facility ID, make sure to get the most recent status open vs closed
-foodinsp23_24_SSIclean <- foodinsp23_24_SSI %>% 
-  mutate(SOURCE=factor(SOURCE, ordered=T, levels=c("Dec_2023", "March_2024","June_2024", "Dec_2024"))) %>%
-  group_by(FACILITY_ID) %>% 
-  filter(SOURCE == max(SOURCE)) %>% 
-  ungroup() %>%
-  mutate(SOURCE="food_inspection") %>%
-  mutate(
-    small = ifelse(grepl("1-1,999", PE_DESCRIPTION), 1, 0),
-    large = ifelse(grepl("2,000", PE_DESCRIPTION), 1, 0)
-  ) %>%
+la_ct_wtcent_dat <- get_lac_weight_centroids() %>%
   st_transform(4326) %>% # OSM data is in 4326
-  mutate(lon = GEOCODE_LONGITUDE, lat = GEOCODE_LATITUDE) %>%
-  mutate(count=1) %>%
-  select(OBJECTID, lon, lat, count, small, large, MATCH_ADDR, FACILITY_NAME, SOURCE)
+  merge(la_ct_key, by="GEOID") %>%
+  mutate(lon = st_coordinates(.)[,1], lat = st_coordinates(.)[,2])
 
-# clean data axle market data from 2023
-foodmarket_23_DA_clean <- foodmarket_23_DA %>%
-  mutate(SOURCE="data_axle") %>%
-  rename(FACILITY_NAME = COMPANY_NAME) %>%
-  st_transform(4326) %>% # OSM data is in 4326
-  mutate(lon = st_coordinates(.)[,1], lat = st_coordinates(.)[,2]) %>%
-  mutate(count=1) %>%
-  select(OBJECTID, lon, lat, count, MATCH_ADDR, FACILITY_NAME, SOURCE)
-  
-foodmarket_merged <- bind_rows(foodinsp23_24_SSIclean, foodmarket_23_DA_clean) %>%
-  mutate(SOURCE_OBJECTID=OBJECTID,
-         id=row_number())
+
 
 #!file.exists('../../0_shared-data/processed/LAC_accessibility/density/la_city/parcel_CAR20250321_1800_1.csv')
 # setup r5r
@@ -157,10 +136,6 @@ compute_accessibility <- function(origins, destinations, mode, chunk_size, cutof
   return(output_file)
   
 }
-
-
-# 
-access_path <- paste0(processed_path, "LAC_accessibility")
 
 # TODO move this to a different file (e.g. helpers)
 setup_access_measure_folders <- function(access_path) { 
@@ -245,29 +220,13 @@ split[6]
 # subdivide hh data into two datasets for running on separate devices based on number of devices
 # DEVICE 1
 nrow(la_city_hh)
-split <- round(seq(15795, nrow(la_city_hh), length.out=6))
 
-split[1]
-split[2]
-
-#d evice #3 split[3] +  28851 - split [4] -1
-# device #4 split[4] - split[5]
-
-typeof(la_city_hh)
-match(560452, la_city_hh$id)
-
-# TODO Map all the data inputs so see errors/ issues 
-# TODO isolate small region in LA to test on 
-# [x] TODO run code for other orgins (CTs, Weighted CTs)
-#TODO change return value of access_drive to index?
-split[6]- split[5]
-
+la_city_hh_remain <- la_city_hh[!(la_city_hh$id %in% temp$id),]
 
 la_diff <- la_hh_cleaned[!(la_hh_cleaned$id %in% la_city_hh$id),]
 
-# finished 1-2 and 5-6
 access_drive <- compute_accessibility(
-  origins = la_hh_cleaned,
+  origins = la_city_hh,
   destinations = foodmarket_merged,
   mode = "CAR",
   chunk_size = calc_chunk_size(ram=38, mode="CAR"),
@@ -276,7 +235,7 @@ access_drive <- compute_accessibility(
   progress=F,
   output_path=paste0(access_path, "/density/la_county", sep="/"),
   origin_type = "parcel", #should be parcel
-  file_id=3
+  file_id="restaurants"
 ) 
 
 # access_drive <- compute_accessibility(
@@ -314,3 +273,7 @@ access_drive <- compute_accessibility(
  
  # find all ids for index betwen split 1 and split 2 tht are not in access 
  sub <- la_city_hh[split[2]:split[6],][!(la_city_hh$id %in% access$id),]
+ 
+ 
+ 
+ 
