@@ -19,3 +19,19 @@ st_centroid_within_poly <- function (poly) {
   ctrd %>% select(-indicator)
 }
 
+
+
+clipintersect_boundary <- function(result, boundary) { 
+  # create slight buffer
+  boundary1 <- st_buffer(boundary, 0) 
+  
+  result$indicator <- result %>%
+    st_intersects(boundary1) %>% 
+    lengths > 0
+  
+  result1 <- result %>%
+    filter(indicator) %>%
+    select(-indicator)
+  
+  return(result1)
+}

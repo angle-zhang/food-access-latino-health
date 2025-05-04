@@ -1,24 +1,82 @@
+---
+---
+---
+
 # Map basic input data
+
+```{r}
+source("./0_Libraries.R")
+# get county boundary and water
+la_county <- get_county_boundary() %>%
+  st_transform(proj_crs)
+
+la_city <- get_city_boundary(proj_crs) %>%
+  st_transform(proj_crs)
+
+# get water
+la_water <- area_water(state="CA", county="Los Angeles")%>%
+  st_transform(proj_crs) %>%
+  clipintersect_boundary(la_city)
+
+
+osm_parks <- getbb("Los Angeles County", display_name_contains = "United States") %>%
+  opq() %>% 
+  add_osm_feature(key = "leisure", value=c("park", "nature_reserve", "golf_course")) %>% 
+  osmdata_sf()
+
+la_parks <- osm_parks$osm_polygons %>%
+  st_transform(proj_crs) %>%
+  clipintersect_boundary(la_city)
+  
+
+# get major highways
+
+```
+
+## Mapping study area
+
+```{r}
+
+tm_shape(la_city) +
+  tm_polygons(col = "lightgrey", fill_alpha=.2) +
+  tm_shape(la_county) +
+  tm_borders() + 
+  tm_shape(ocean) +
+  tm_polygons(col="lightblue") + 
+  tm_shape(la_water) +
+  tm_fill(col="lightblue", lwd=0) +  
+  tm_shape(la_parks) +
+  tm_polygons(col="lightgreen") + 
+  tm_layout(inner.margins = c(0.1, .1, 0.2, 0.1)) +
+  tm_scale_bar()
+
+```
 
 ## Mapping food access poi
 
 ```{r}
+
 tm_shape(la_county) +
   tm_borders() +
   tm_shape(foodinsp23_24_SSIclean) +
-  tm_dots(col = "green", size = 0.01) +
-  tm_layout(legend.position = c("left", "bottom"))
+  tm_dots(col = "blue", size = 0.01)
 
 ```
 
 ## Mapping population weighted census tract centroids
 
-```{r}
-tm_shape(la_county) +
-  tm_borders() +
+```{r, include=FALSE}
+tmap_mode("plot")
+
+
+tm_shape(la_ct) +
+  tm_borders(col="grey") +
   tm_shape(la_ctcent_dat) +
-  tm_dots(col = "red", size = 0.01) +
-  tm_layout(legend.position = c("left", "bottom"))
+  tm_dots(col = "red", size = 0.02) +
+    tm_shape(la_ct_wtcent_dat) +
+  tm_dots(col = "purple", size = 0.02) +
+  tm_layout(legend.position = c("left", "bottom")) + 
+  tm_scale_bar()
 
 tm_shape(la_county) +
   tm_borders() +
@@ -63,11 +121,11 @@ tm_shape(random_tract) +
 tm_shape(la_county) +
   tm_borders() +
   tm_shape(foodinsp23_24_SSIclean) +
-  tm_dots(col = "green", size = 0.01) +
+  tm_dots(col = "red", size = 0.01) +
   tm_shape(la_ct) +
   tm_borders() +
   tm_shape(la_ctcent_dat) +
-  tm_dots(col = "red", size = 0.01) +
+  tm_dots(col = "purple", size = 0.01) +
   tm_layout(legend.position = c("left", "bottom"))
 
 ```
@@ -78,20 +136,14 @@ tm_shape(la_county) +
 
 elev <- get_dem("socal", proj_crs)
 
-ocean <- rnaturalearth::ne_download(scale = 10, type = "ocean", category = "physical", returnclass = "sf") %>%
-  st_transform(proj_crs) %>%
-  st_make_valid()
-
-
 tmap_options(check.and.fix = TRUE)
 
 tm_shape(elev) +
-  tm_raster(palette = terrain.colors(100), style = "cont", title = "Elevation (m)") + tm_shape(ocean) +
+  tm_raster(palette = terrain.colors(100), style = "cont", title = "Elevation (m)")+ 
+  tm_shape(ocean) +
   tm_fill(col = "lightblue", alpha = 0.9) +  # Add ocean layer bodies
-  tm_shape(lac_boundary) + 
-   tm_borders(col = "black", alpha=.5) +
-   tm_shape(lac_buffer) + 
-  tm_borders(col = "black", alpha=.5)# Add county boundary
+  tm_shape(la_county) + 
+   tm_borders(col = "black", alpha=.5)
 
 
 ```
