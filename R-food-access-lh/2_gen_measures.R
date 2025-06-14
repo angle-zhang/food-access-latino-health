@@ -237,8 +237,8 @@ la_city_hh_remain <- la_city_hh[!(la_city_hh$id %in% temp$id),]
 
 # finished 1-2 and 5-6
 access_drive <- compute_accessibility(
-  origins = la_city_hh_remain,
-  destinations = foodmarket_merged,
+  origins = la_city_hh,
+  destinations = foodpoi,
   mode = "CAR",
   chunk_size = calc_chunk_size(ram=7, mode="CAR"),
   cutoff=c(5, 10, 15, 20, 25),
