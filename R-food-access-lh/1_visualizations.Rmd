@@ -41,8 +41,6 @@ tm_shape(la_city) +
   tm_polygons(col = "lightgrey", fill_alpha=.2) +
   tm_shape(la_county) +
   tm_borders() + 
-  tm_shape(ocean) +
-  tm_polygons(col="lightblue") + 
   tm_shape(la_water) +
   tm_fill(col="lightblue", lwd=0) +  
   tm_shape(la_parks) +
@@ -58,7 +56,7 @@ tm_shape(la_city) +
 
 tm_shape(la_county) +
   tm_borders() +
-  tm_shape(foodinsp23_24_SSIclean) +
+  tm_shape(food_23_24_SSI) +
   tm_dots(col = "blue", size = 0.01)
 
 ```
@@ -120,7 +118,7 @@ tm_shape(random_tract) +
 ```{r}
 tm_shape(la_county) +
   tm_borders() +
-  tm_shape(foodinsp23_24_SSIclean) +
+  tm_shape(food_23_24_SSI) +
   tm_dots(col = "red", size = 0.01) +
   tm_shape(la_ct) +
   tm_borders() +
@@ -140,8 +138,6 @@ tmap_options(check.and.fix = TRUE)
 
 tm_shape(elev) +
   tm_raster(palette = terrain.colors(100), style = "cont", title = "Elevation (m)")+ 
-  tm_shape(ocean) +
-  tm_fill(col = "lightblue", alpha = 0.9) +  # Add ocean layer bodies
   tm_shape(la_county) + 
    tm_borders(col = "black", alpha=.5)
 

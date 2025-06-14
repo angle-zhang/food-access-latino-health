@@ -64,7 +64,6 @@ sic_codes <- read_sheet('https://docs.google.com/spreadsheets/d/1y7TxLRUXCcgd-T4
 
 # split range if they exist 
 
-
 split_range <- function(x) { 
   y <- c()
   if(length(x)==1) { 
@@ -116,14 +115,13 @@ sic_codes_cl <- sic_codes %>%
     end = if_else(is_range, str_extract(sic_codes_all, "(?<=-)[0-9]+"), sic_codes_all)
   ) %>% 
   mutate(
-    start = str_extract(start, "^\\d{1,6}"), # truncate to 6 digit sic code
+    start = str_extract(start, "^\\d{1,6}"), #truncate to 6 digit sic code
     end = str_extract(end, "^\\d{1,6}"),
     range_str = paste0(start, "-", end),
     start = as.numeric(start),
     end = as.numeric(end)
   ) %>%
   select(start, end, range_str, keyword, words_name, "3-LTR") 
-  
   
 
 t1 <- head(sic_codes_cl,1000)
@@ -154,50 +152,57 @@ write.csv(sic_codes_cl, paste0(processed_path, "sic_codes_cleaned.csv"), row.nam
 
 # TODO identify columns in original data that may have info about owners (will give chain status if many of same owner)
 
+#'* NOT USING THIS: MERGING DA WITH SIC CODE RANGES *---------------------------------------------------
+# sic_codes_cl <- read.csv(paste0(processed_path, "sic_codes_cleaned.csv"))
+# 
+# sic_dt <- as.data.table(sic_codes_cl)
+# 
+# # download data from dataAxle to get chains
+# poi_da <- get_data_axle(year=2022, state="CA") %>%
+#   filter(!is.na(COMPANY) & !is.na(PRIMARY.SIC.CODE)) 
+# 
+# names(poi_da)
+# head(poi_da)
+# 
+# # TODO clean data axle data and assign sic codes 
+# # gather all sic codes 
+# # get all names wiht SIC
+# sic_code_cols <- names(poi_da)[grepl("SIC\\.CODE", names(poi_da))] # get all column names with SIC)
+# print(sic_code_cols)
+# 
+# poida_cleaned <- poi_da %>% # create one row per sic code in poi data 
+#   gather(key="sic_names", value="SIC.CODE", all_of(sic_code_cols)) %>%
+#   mutate(SIC.CODE = as.numeric(SIC.CODE)) %>%
+#   as.data.table()
+# 
+# head(poida_cleaned)
+# # find SIC codes in intervals defined
+# 
+# #temp <- foverlaps(sic_dt, poida_cleaned, by.x = c("start", "end"), type = "within")
+# 
+# t1 <- head(poida_cleaned, 400)
+# temp <- sic_dt[poida_cleaned, on = .(start <= SIC.CODE, end >= SIC.CODE), nomatch = 0]# select variabbles in poida_cleaned between sic code
+# t <- head(temp, 400)
+# 
+# # if keyword is true, then check if name is in company name
+# # TODO warning with grepl
+# temp1 <- temp[keyword==FALSE | (keyword==TRUE & str_detect(COMPANY, regex(words_name, ignore_case = TRUE)))]
+# 
+# t3 <- temp1[X3.LTR=="WRS"] 
+# 
+# t2 <- head(temp1, 40000)
+# 
+# #temp1[, c("keyword", "words_name", "start", "end", "range_str") := NULL]
+# temp1[, dummy:=1] # create dummy variable to use in dcast
+# 
+# temp2 <- dcast(temp1, ...1 + COMPANY + ADDRESS.LINE.1 + CITY + ZIPCODE + ZIP4~ X3.LTR, value.var="dummy", fill=0) # summarize to wide format with new columns representing food POI categories
 
 
-#'* GET AND CLEAN DATA AXLE DATA FOR MERGING AND ANALYSIS *---------------------------------------------------
-sic_codes_cl <- read.csv(paste0(processed_path, "sic_codes_cleaned.csv"))
-sic_dt <- as.data.table(sic_codes_cl)
 
-# download data from dataAxle to get chains
-poi_da <- get_data_axle(year=2022, state="CA") %>%
-  filter(!is.na(COMPANY) & !is.na(PRIMARY.SIC.CODE)) 
+# TODO NEXT STEP - deal with columns that have exceptions (e.g. EAT) 5/29/25
+# can use other codes e.g. BKS EAO, EAP, EEU, etc.
 
-names(poi_da)
-head(poi_da)
 
-# TODO clean data axle data and assign sic codes 
-# gather all sic codes 
-# get all names wiht SIC
-sic_code_cols <- names(poi_da)[grepl("SIC\\.CODE", names(poi_da))] # get all names with SIC)
-print(sic_code_cols)
-
-poida_cleaned <- poi_da %>%
-  gather(key="sic_names", value="SIC.CODE", all_of(sic_code_cols)) %>%
-  mutate(SIC.CODE = as.numeric(SIC.CODE)) %>%
-  as.data.table()
-
-head(poida_cleaned)
-# find SIC codes in intervals defined
-
-#temp <- foverlaps(sic_dt, poida_cleaned, by.x = c("start", "end"), type = "within")
-
-# TODO double check this, something was wrong with SIC code column; ensure behavior is as expected 
-temp <- sic_dt[poida_cleaned, on = .(start <= SIC.CODE, end >= SIC.CODE), nomatch = 0]
-t <- head(temp, 400)
-# if keyword is true, then check if name is in company name
-# TODO warning with grepl
-temp1 <- temp[keyword==FALSE | (keyword==TRUE & grepl(pattern=words_name, COMPANY, ignore.case=TRUE))]
-temp1[, c("keyword", "words_name", "start", "end", "range_str") := NULL]
-temp1[, dummy:=1] # create dummy variable to use in dcast
-
-temp2 <- dcast(temp1, ...1 ~ X3.LTR, value.var="dummy", fill=0) # summarize 
-
-# fast food only
-fastf <- temp[X3.LTR=="FFS"]
-
-# get all restaurants
 #'* 3LTR codes for restaurants that are not fast food, pizza, coffee shops, or bakeries* 
 
 # EAO	Ethnic Restaurants – Other Asian
@@ -211,7 +216,7 @@ fastf <- temp[X3.LTR=="FFS"]
 
 # filter for keywords 
 
-head(unique(temp1$words_name))
+#head(unique(temp1$words_name))
   #%>%
   # rowwise() %>%
   # mutate(
@@ -222,12 +227,12 @@ head(unique(temp1$words_name))
 
 
 
-head(poida_cleaned)
+#head(poida_cleaned)
 
 # filter by sic_codes_cl
 
 
-head(poida_cleaned)
+#head(poida_cleaned)
 
 # TODO geocode data
 
@@ -266,6 +271,7 @@ foodmarket_cleaned1 <- foodmarket_cleaned %>%
   fuzzyjoin::stringdist_left_join(chains2, by=c("FACILITY_NAME"="COMPANY"), max_dist=1) %>%
   mutate(chain = ifelse(sic_codes!="NULL", TRUE, FALSE)) 
 
+# TODO remove duplicates?
 
 length(unique(chains2$COMPANY))
 nrow(foodmarket_cleaned1 %>% filter(chain))
