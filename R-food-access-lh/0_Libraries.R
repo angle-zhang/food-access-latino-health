@@ -9,6 +9,7 @@ library(tigris)
 library(dplyr)
 library(osmextract)
 library(data.table)
+library(osmdata)
 
 
 

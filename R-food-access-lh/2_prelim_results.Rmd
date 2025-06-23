@@ -16,7 +16,7 @@ source("0_Libraries.R")
 
 ```{r cars}
 # visualize ct_level data
-read.csv(paste0(processed_path, "/LAC_cleaned/ct_driving_times.csv")) 
+head(read.csv(paste0(processed_path, "/LAC_cleaned/ct_driving_times.csv"))) 
 
 la_ct <- get_census_tracts(proj_crs, state="CA", year=2020, county="Los Angeles") %>%
   mutate(GEOID = as.numeric(GEOID)) 
@@ -29,13 +29,39 @@ ct_drive_data <- la_ct %>%
 
 # plot census tract data
 tm_shape(ct_drive_data) +
-  tm_polygons(col = "driving_count_5_parcel_mean", style = "quantile", palette = "Blues") 
+  tm_polygons(col = "driving_count_5_parcel_mean", style = "quantile", palette = "Blues") +
+  tm_shape(la_county) +
+  tm_borders() +
+  tm_shape(ocean) +
+  tm_polygons(col="lightblue")+
+  tm_shape(la_parks) +
+  tm_polygons(col="mediumseagreen") +
+  tm_layout(inner.margins = c(0.1, .1, 0.2, 0.1)) +
+  tm_scale_bar()
 
 tm_shape(ct_drive_data) +
-  tm_polygons(col = "driving_count_5_ct_cent", style = "quantile", palette = "Blues") 
+  tm_polygons(col = "driving_count_5_ct_cent", style = "quantile", palette = "Blues")  +
+  tm_shape(la_county) +
+  tm_borders() +
+  tm_shape(ocean) +
+  tm_polygons(col="lightblue")+
+  tm_shape(la_parks) +
+  tm_polygons(col="mediumseagreen") +
+  tm_layout(inner.margins = c(0.1, .1, 0.2, 0.1)) +
+  tm_scale_bar()
+
 
 tm_shape(ct_drive_data) +
-  tm_polygons(col = "driving_count_5_ct_wtcent", style = "quantile", palette = "Blues")
+  tm_polygons(col = "driving_count_5_ct_wtcent", style = "quantile", palette = "Blues") +
+  tm_shape(la_county) +
+  tm_borders() +
+  tm_shape(ocean) +
+  tm_polygons(col="lightblue")+
+  tm_shape(la_parks) +
+  tm_polygons(col="mediumseagreen") +
+  tm_layout(inner.margins = c(0.1, .1, 0.2, 0.1)) +
+  tm_scale_bar()
+
 
 ```
 

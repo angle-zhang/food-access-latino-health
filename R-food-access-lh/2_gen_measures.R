@@ -227,7 +227,7 @@ la_diff <- la_hh_cleaned[!(la_hh_cleaned$id %in% la_city_hh$id),]
 
 access_drive <- compute_accessibility(
   origins = la_city_hh,
-  destinations = foodmarket_merged,
+  destinations = foodpoi,
   mode = "CAR",
   chunk_size = calc_chunk_size(ram=38, mode="CAR"),
   cutoff=c(5, 10, 15, 20, 25),
