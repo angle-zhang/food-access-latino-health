@@ -59,6 +59,7 @@ length(unique(foodmarket_merged$FACILITY_NAME)) # get all unique names with # fo
   # TODO put this in a function
 library(googlesheets4)
 
+<<<<<<< HEAD
 #
 poi_da <- get_data_axle(year=2022, state="CA") %>%
   filter(!is.na(COMPANY) & !is.na(PRIMARY.SIC.CODE))
@@ -165,4 +166,5 @@ write.csv(foodpoi, paste0(processed_path, "foodpoi.csv"), row.names = FALSE)
 #' 
 #' 
 #' # TODO complex strat: 
+
 
