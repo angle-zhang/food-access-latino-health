@@ -71,26 +71,22 @@ r5r_core <- setup_r5(data_path = data_path)
 
 # function for computing accessibility measures
 compute_accessibility <- function(origins, destinations, mode, chunk_size, cutoffs = c(5, 10, 15, 20, 25, 30, 35, 40, 45), colnames,
-                                  origin_type, output_path, file_id=NULL, # used to keep track of files being generated on multiple machines
+                                  origin_type, sheet_url, sheet_name = NULL,# used to keep track of files being generated on multiple machines
                                   time_window = 30, departure_time = "2025-03-21 18:00:00", progress = FALSE) {
                                                             
   # Convert departure time to POSIXct
   departure_time <- as.POSIXct(departure_time)
   departure_time_formatted <- format(departure_time, "%Y%m%d_%H%M")
   
-  # Construct the output file name
-  if (is.null(file_id)) {
-    file_name <- paste0(origin_type, "_", mode, departure_time_formatted, ".csv")
-    output_file <- paste0(output_path, file_name)
-  } else {
-    file_name <- paste0(origin_type, "_", mode, departure_time_formatted, "_", file_id, ".csv")
-    output_file <- paste0(output_path, file_name)
+  # Generate a default sheet name if none given
+  if (is.null(sheet_name)) {
+    sheet_name <- paste0(origin_type, "_", mode, "_", departure_time_formatted)
   }
   
-  # Only create the output file if it doesn't exist
-  if(!file.exists(output_file)){
-    print("Output file doesn't exist, creating now")
-    file.create(output_file)  
+  # Create sheet tab if it doesn't exist
+  existing_sheets <- sheet_names(sheet_url)
+  if (!(sheet_name %in% existing_sheets)) {
+    sheet_add(sheet_url, sheet = sheet_name)
   }
   
   # Get the number of rows in the origins dataset
@@ -124,17 +120,12 @@ compute_accessibility <- function(origins, destinations, mode, chunk_size, cutof
     print(paste("Processed rows:", i, "to", end_idx, ">>", time))
     print(paste("Total time elapsed:", total_time))
     
-    # Store the chunk in the results list, TODO check if this breaks down based on file size
-    write.table(access_chunk_res, sep=",", output_file, col.names=NA, append=T)
+    # Append to Google Sheet tab
+    sheet_append(ss = sheet_url, data = access_chunk_res, sheet = sheet_name)
   }
-  print("Finished processing origins")
-  # Combine all results into a single dataframe after looping through all of them (may be too large of an operation?)
-  #access_data <- bind_rows(access_results)
-  # print(paste("Saving results to:", output_path))
-  # write.csv(access_data, output_file, append=F)
-  # print(paste("Saved results to:", output_path))
-  return(output_file)
   
+  print("Finished processing origins")
+  return(paste("Written to sheet:", sheet_url, "tab:", sheet_name))
 }
 
 # TODO move this to a different file (e.g. helpers)
@@ -154,6 +145,7 @@ setup_access_measure_folders <- function(access_path) {
   
 }
 
+
 # TODO move this to a different file (e.g. helpers)
 # turn this into function calculating chunk size
 calc_chunk_size <- function(ram, mode) { 
@@ -167,16 +159,16 @@ calc_chunk_size <- function(ram, mode) {
 
 # Compute values for LA CITY Parcels
 # generate access for parcels
-access_walk <- compute_accessibility(
-  origins = la_city_hh,
-  destinations = foodmarket_merged,
-  mode = "WALK",
-  cutoffs = seq(.1, 45, by=.1),
-  chunk_size =calc_chunk_size(ram=34, mode="WALK"),  #calc_chunk_size(ram=12, mode="WALK"),
-  output_path = paste(access_path, "density/la_city/", sep="/"),
+access_CAR <- compute_accessibility(
+  origins = sub,
+  destinations = foodpoi,
+  mode = "CAR",
+  chunk_size = calc_chunk_size(ram=34, mode="CAR"),  #calc_chunk_size(ram=12, mode="WALK"),
+  #output_path = paste(access_path, "density/la_city/", sep="/"),
   origin_type = "parcel",
-  colnames = c("count", "small", "large"),
-  file_id=3
+  sheet_url = "https://docs.google.com/spreadsheets/d/1-CKHW-s-W4-kPiZ0PP8kZwNx_kyyC-dFb5NHu6B-mds/edit?usp=sharing",
+  colnames = c("CNV", "FF", "GRC", "Not included", "RR", "SMK", "SPF"),
+  #file_id="CAT"
 )
 
 split[6]
@@ -226,7 +218,7 @@ la_city_hh_remain <- la_city_hh[!(la_city_hh$id %in% temp$id),]
 la_diff <- la_hh_cleaned[!(la_hh_cleaned$id %in% la_city_hh$id),]
 
 access_drive <- compute_accessibility(
-  origins = la_city_hh,
+  origins = sub,
   destinations = foodpoi,
   mode = "CAR",
   chunk_size = calc_chunk_size(ram=38, mode="CAR"),
@@ -266,13 +258,15 @@ access_drive <- compute_accessibility(
 
 # check progress 
 # print(base_path)
- access <- read.csv(paste0(processed_path, "LAC_accessibility/density/la_city/", "parcel_CAR20250321_1800_3.csv"))
+ access <- read.csv(paste0(processed_path, "LAC_accessibility/density/la_city/", "parcel_CAR20250321_1800_CAT.csv"))
  access$id <- as.numeric(access$id) 
  access <- access[!is.na(access$id),]
  offset <- nrow(access)/5
  
- # find all ids for index betwen split 1 and split 2 tht are not in access 
- sub <- la_city_hh[split[2]:split[6],][!(la_city_hh$id %in% access$id),]
+ head(access)
+ 
+ # find all ids tht are not in access 
+ sub <- la_city_hh[!(la_city_hh$id %in% access$id),]
  
  
  

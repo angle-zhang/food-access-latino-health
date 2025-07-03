@@ -1,6 +1,3 @@
----
----
----
 
 # Map basic input data
 
@@ -17,6 +14,12 @@ la_city <- get_city_boundary(proj_crs) %>%
 la_water <- area_water(state="CA", county="Los Angeles")%>%
   st_transform(proj_crs) %>%
   clipintersect_boundary(la_city)
+  
+la_food <- foodpoi_plot %>%
+  filter(!is.na(LONGITUDE)) %>%
+  st_as_sf(coords=c("LONGITUDE", "LATITUDE"), crs=4326) %>%
+  st_transform(proj_crs) %>%
+  clipintersect_boundary(la_county)
 
 
 osm_parks <- getbb("Los Angeles County", display_name_contains = "United States") %>%
@@ -54,10 +57,10 @@ tm_shape(la_city) +
 
 ```{r}
 
-tm_shape(la_county) +
+tm_shape(la_city) +
   tm_borders() +
-  tm_shape(food_23_24_SSI) +
-  tm_dots(col = "blue", size = 0.01)
+  tm_shape(la_food) +
+  tm_dots("zhang-2025", size = 0.01)
 
 ```
 

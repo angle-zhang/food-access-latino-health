@@ -59,10 +59,11 @@ length(unique(foodmarket_merged$FACILITY_NAME)) # get all unique names with # fo
   # TODO put this in a function
 library(googlesheets4)
 
-<<<<<<< HEAD
 #
 poi_da <- get_data_axle(year=2022, state="CA") %>%
   filter(!is.na(COMPANY) & !is.na(PRIMARY.SIC.CODE))
+
+# TODO clip to la county buffer
 
 naics <- read_sheet('https://docs.google.com/spreadsheets/d/1y7TxLRUXCcgd-T4_mGAXaAwAR7R00JxJDjJ9IhAucAA/edit?gid=0#gid=0') 
 
@@ -79,11 +80,17 @@ naics_dt <- as.data.table(naics)
 
 temp <- naics_dt[poida_cleaned, on = .(code == NAICS.CODE.trunc), nomatch = 0] # select variabbles in poida_cleaned between sic code
 temp[, dummy:=1]
-temp2 <- dcast(temp, ...1 + COMPANY + ADDRESS.LINE.1 + CITY + ZIPCODE + ZIP4 ~ `zhang-2025`, value.var="dummy", fill=0) # summarize to wide format with new columns representing food POI categories
+temp2 <- dcast(temp, ...1 + COMPANY + ADDRESS.LINE.1 + CITY + ZIPCODE + ZIP4 + LATITUDE + LONGITUDE ~ `zhang-2025`, value.var="dummy", fill=0) # summarize to wide format with new columns representing food POI categories
 
-foodpoi <- temp %>%
+foodpoi <- temp2 %>%
   as.data.frame() %>%
-  select(-c(6:8)) 
+  filter(!is.na(LONGITUDE)) %>%
+  st_as_sf(coords=c("LONGITUDE", "LATITUDE"), crs=4326) %>%
+  rename(id=...1)
+
+foodpoi_plot <- temp %>%
+  as.data.frame() %>%
+  select(-c(6:8))
 
 # write foodpoi to file
 write.csv(foodpoi, paste0(processed_path, "foodpoi.csv"), row.names = FALSE)
