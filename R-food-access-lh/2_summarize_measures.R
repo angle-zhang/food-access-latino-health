@@ -74,9 +74,9 @@ driving_times$household_ct <- process_times(driving_times$household %>% select(-
 driving_times$ct_cent <- process_times(driving_times$ct_cent, la_ct, type="driving", scale="ct_cent", agg=F)
 driving_times$ct_wtcent <- process_times(driving_times$ct_wtcent, la_ct, type="driving", scale="ct_wtcent", agg=F)
 
-head(driving_times$ct_cent) #inspect 
+(driving_times$ct_cent) #inspect 
 head(driving_times$household_ct)
-
+head
 temp <- driving_times$household_ct
 
 # get geoids in la_hh

@@ -274,12 +274,7 @@ access_drive <- compute_accessibility(
 # )
 
 
-# check progress 
-# print(base_path)
- access <- read.csv(paste0(processed_path, "LAC_accessibility/density/la_city/", "ct_cent_CAR20250321_1800_1.csv"))
- access$id <- as.numeric(access$id) 
- access <- access[!is.na(access$id),]
- offset <- nrow(access)/5
+
  
  # find all ids for index betwen split 1 and split 2 tht are not in access 
  sub <- la_city_hh[split[2]:split[6],][!(la_city_hh$id %in% access$id),]

@@ -7,8 +7,6 @@ download_census_blocks(state="CA", county="Los Angeles", year=2020)
 # TODO get edges outside LA County
 # get suggested CRS
 
-
-
 # convert to suggested crs
 lac_boundary <- st_transform(get_county_boundary(), proj_crs)
 st_crs(lac_boundary, parameters = TRUE)$units_gdal # check units
@@ -28,6 +26,7 @@ unique(st_is_valid(la_cb, reason=T))
 # DOWNLOAD DATA
 download_dem(lac_buffer, "socal")
 download_osm(bbox=lac_bbox)
+
 # ------ GET CENTROIDS OF CTs ------ #
 # gets centroid of census blocks then calculates the population weighted centroid of a census tract based on those
 # for centroids that lie outside a census block, st_point_on_surface is used to get a point within the polygon
@@ -61,6 +60,7 @@ st_crs(la_ctcent_dat)
 
 # get sample for mapping
 la_hh_sample <- la_hh_cleaned[sample(nrow(la_hh_cleaned), 500), ]
+
 # ------ LOAD SNAP POI DATA ------ #
 # Load SNAP historical data for the year 2021
 snap_historical <- get_snap_historical(years = 2021, proj_crs = st_crs(lac_boundary))
