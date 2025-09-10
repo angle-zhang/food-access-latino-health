@@ -128,5 +128,7 @@ write.csv(ct_walking, paste0(processed_path, "LAC_cleaned/ct_walking_times.csv")
 
 head(walking_times$ct_wtcent) #inspect
 head(walking_times$ct_cent) #inspect
+
+
   
 

@@ -1,7 +1,3 @@
----
----
----
-
 # Map basic input data
 
 ```{r}
@@ -17,6 +13,12 @@ la_city <- get_city_boundary(proj_crs) %>%
 la_water <- area_water(state="CA", county="Los Angeles")%>%
   st_transform(proj_crs) %>%
   clipintersect_boundary(la_city)
+  
+la_food <- foodpoi_plot %>%
+  filter(!is.na(LONGITUDE)) %>%
+  st_as_sf(coords=c("LONGITUDE", "LATITUDE"), crs=4326) %>%
+  st_transform(proj_crs) %>%
+  clipintersect_boundary(la_county)
 
 
 osm_parks <- getbb("Los Angeles County", display_name_contains = "United States") %>%
@@ -54,62 +56,74 @@ tm_shape(la_city) +
 
 ```{r}
 
-tm_shape(la_county) +
+tm_shape(la_city) +
   tm_borders() +
-  tm_shape(food_23_24_SSI) +
-  tm_dots(col = "blue", size = 0.01)
+  tm_shape(la_food) +
+  tm_dots("zhang-2025", size = 0.01)
 
 ```
 
 ## Mapping population weighted census tract centroids
 
 ```{r, include=FALSE}
-tmap_mode("plot")
+# remotes::install_version("tmap", version = "3.3-4") fix for tmap view
+# detach("package:tmap", unload=TRUE)
 
+tmap_mode("view")
+
+tmap_options(check.and.fix = TRUE) 
 
 tm_shape(la_ct) +
-  tm_borders(col="grey") +
+  tm_polygons(col="grey") +
   tm_shape(la_ctcent_dat) +
   tm_dots(col = "red", size = 0.02) +
     tm_shape(la_ct_wtcent_dat) +
   tm_dots(col = "purple", size = 0.02) +
-  tm_layout(legend.position = c("left", "bottom")) + 
-  tm_scale_bar()
+  tm_layout(legend.position = c("left", "bottom")) 
 
-tm_shape(la_county) +
-  tm_borders() +
-  tm_shape(la_hh_sample) +
-  tm_dots(col = "black", size = 0.01) +
-  tm_layout(legend.position = c("left", "bottom"))
+# tm_shape(la_county) +
+#   tm_borders() +
+#   tm_shape(la_hh_sample) +
+#   tm_dots(col = "black", size = 0.01) +
+#   tm_layout(legend.position = c("left", "bottom"))
 
 ```
 
-# Inspecting point datasets
+# Inspecting census tract point datasets for issues
+
+We inspected the census tracts with strange behavior ID = 980016, 990200, 599100 (in the middle of ocean) using census reporter because there were issues plotting these points
+
+980016 - split into two (keep, handle in code)
+
+9902 - zero population (remove all cts with 0 aland)
+
+5991 - catalina island (remove)
+
+980030 - empty point (need to see why)
+
+Inspecting seemingly missing values at the top - see that they are part of other census tracts (e.g. 901209)
 
 ```{r}
 # Select a random census tract
 set.seed(123)
-random_tract <- la_ct %>% slice_sample(n = 1)
 
-# Find adjacent tracts
-adjacent_tracts <- la_ct[st_touches(random_tract, la_ct, sparse = FALSE), ]
+  tract <- la_ct[la_ct$TRACTCE==980001,]
 
-# Plot the selected and adjacent tracts
-tmap_mode("view")
-
-tm_shape(random_tract) + 
-  tm_borders(lwd = 2, col = "red") + tm_fill(col = "pink", alpha = 0.5) +
-  tm_shape(adjacent_tracts) + 
-  tm_borders(lwd = 2, col = "blue") + tm_fill(col = "lightblue", alpha = 0.5) +
-  tm_shape(la_ctcent_dat) +
-  tm_dots(col = "red", size = 0.01) +
-  tm_shape(la_ct_wtcent_dat) +
-  tm_dots(col = "green", size = 0.01) +
-  tm_shape(la_ct) + 
-  tm_borders() +
-  tm_layout(legend.position = c("left", "bottom"))
-
-## TODO look into tracts with strange behavior ID = 980016, 990200 + 599100 (in the middle of ocean)
+  print(tract$TRACTCE[[1]])
+  # Find adjacent tracts
+  dot <- la_ctcent_dat[la_ctcent_dat$TRACTCE==980001,]
+  dotwt <- la_ct_wtcent_dat[la_ct_wtcent_dat$TRACTCE==980001,]
+  
+  # Plot the selected and adjacent tracts
+  figure <- tm_shape(dot) +
+    tm_dots(col = "red", size = 0.01) +
+    tm_shape(dotwt) +
+    tm_dots(col = "green", size = 0.01) +
+    tm_shape(la_ct) +
+    tm_borders() +
+    tm_layout(legend.position = c("left", "bottom"))
+  
+  print(figure)
 
 ```
 

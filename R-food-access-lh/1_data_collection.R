@@ -3,6 +3,9 @@ download_census_tracts(state="CA", county="Los Angeles", year=2020)
 download_census_blocks(state="CA", county="Los Angeles", year=2020)
 
 
+
+write.csv(la_hh_temp, paste0(processed_path, "/LAC_origins/la_hh_cleaned.csv"))
+
 # ------ LOAD BOUNDARIES AND CRS ------ #
 # TODO get edges outside LA County
 # get suggested CRS
@@ -30,7 +33,7 @@ download_osm(bbox=lac_bbox)
 # ------ GET CENTROIDS OF CTs ------ #
 # gets centroid of census blocks then calculates the population weighted centroid of a census tract based on those
 # for centroids that lie outside a census block, st_point_on_surface is used to get a point within the polygon
-la_ctcent <- get_pop_weighted_centroid(la_cb, 'TRACTCE20', 'POP20') %>% 
+la_ctcent <- calc_pop_weighted_centroid(la_cb, 'TRACTCE20', 'POP20') %>% 
   st_transform(proj_crs)
 
 # merge ct weighted centroids with rest of census tract data
@@ -51,6 +54,8 @@ write_sf(la_ctcent_dat, paste0(processed_path, "LAC_origins/la_ctcent_dat3182025
 
 la_ct_wtcent_dat <- get_lac_weight_centroids()
 la_ctcent_dat <- get_lac_centroids()
+
+
 
 rm(la_ctcent_dat, la_ct_wtcent_dat, la_ctcent, la_ct, la_cb)
 
