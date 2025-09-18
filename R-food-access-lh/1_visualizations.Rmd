@@ -21,7 +21,7 @@ la_food <- foodpoi_plot %>%
   clipintersect_boundary(la_county)
 
 
-osm_parks <- getbb("Los Angeles County", display_name_contains = "United States") %>%
+osm_parks <- getbb("Los Angeles County", display_name_contains = "United States") % >%
   opq() %>% 
   add_osm_feature(key = "leisure", value=c("park", "nature_reserve", "golf_course")) %>% 
   osmdata_sf()
@@ -29,7 +29,6 @@ osm_parks <- getbb("Los Angeles County", display_name_contains = "United States"
 la_parks <- osm_parks$osm_polygons %>%
   st_transform(proj_crs) %>%
   clipintersect_boundary(la_city)
-  
 
 # get major highways
 
@@ -93,38 +92,40 @@ tm_shape(la_ct) +
 
 We inspected the census tracts with strange behavior ID = 980016, 990200, 599100 (in the middle of ocean) using census reporter because there were issues plotting these points
 
-980016 - split into two (keep, handle in code)
+980016 - split into two (do not erase water - introduces invalid geoms, handled in code) ✔️
 
-9902 - zero population (remove all cts with 0 aland)
+9902 - zero population (remove all cts with 0 aland) ✔️
 
 5991 - catalina island (remove)
 
-980030 - empty point (need to see why)
+```{r}
+tract <- la_ct[la_ct$TRACTCE==980016,]
 
-Inspecting seemingly missing values at the top - see that they are part of other census tracts (e.g. 901209)
+print(tract$TRACTCE[[1]])  # Find adjacent tracts  
+
+dot <- la_ctcent_dat[la_ctcent_dat$TRACTCE==980016,] 
+dotwt <- la_ct_wtcent_dat[la_ct_wtcent_dat$TRACTCE==980016,]
+
+# Plot the selected and adjacent tracts 
+figure <- tm_shape(dot) + tm_dots(col = "red", size = 0.01) + 
+  tm_shape(dotwt) + 
+  tm_dots(col = "green", size = 0.01) + 
+  tm_shape(la_ct) + 
+  tm_borders() + 
+  tm_layout(legend.position = c("left", "bottom"))
+
+print(figure)
+
+```
+
+980030 - no weighted CT point due to zero population (remove all with 0 population) ✔️
+
+we find all empty points in la_ct_wtcent_dat and inspect their corresponding blocks to find they are all population 0; adjusted to remove 0 pop CTs ✔️
 
 ```{r}
-# Select a random census tract
-set.seed(123)
+empty <- la_ct_wtcent_dat[st_is_empty(la_ct_wtcent_dat),]
 
-  tract <- la_ct[la_ct$TRACTCE==980001,]
-
-  print(tract$TRACTCE[[1]])
-  # Find adjacent tracts
-  dot <- la_ctcent_dat[la_ctcent_dat$TRACTCE==980001,]
-  dotwt <- la_ct_wtcent_dat[la_ct_wtcent_dat$TRACTCE==980001,]
-  
-  # Plot the selected and adjacent tracts
-  figure <- tm_shape(dot) +
-    tm_dots(col = "red", size = 0.01) +
-    tm_shape(dotwt) +
-    tm_dots(col = "green", size = 0.01) +
-    tm_shape(la_ct) +
-    tm_borders() +
-    tm_layout(legend.position = c("left", "bottom"))
-  
-  print(figure)
-
+empty_blocks <- la_cb[la_cb$TRACTCE %in% empty$TRACTCE,]
 ```
 
 # Mapping POI and population-weighted centroids data

@@ -63,18 +63,18 @@ library(googlesheets4)
 poi_da <- get_data_axle(year=2022, state="CA") %>%
   filter(!is.na(COMPANY) & !is.na(PRIMARY.SIC.CODE))
 
-# TODO clip to la county buffer
+# TODO wrap this in a function
 
 naics <- read_sheet('https://docs.google.com/spreadsheets/d/1y7TxLRUXCcgd-T4_mGAXaAwAR7R00JxJDjJ9IhAucAA/edit?gid=0#gid=0') 
 
-# TODO make key to  reassign chains to the same NAICS code
+# TODO make key to reassign chains to the same NAICS code
 
 code_cols <- names(poi_da)[grepl("NAICS\\.CODE", names(poi_da))] # get all column names with SIC)
-print(sic_code_cols)
 
 poida_cleaned <- poi_da %>% # create one row per sic code in poi data
   mutate(NAICS.CODE.trunc = as.numeric(str_extract(PRIMARY.NAICS.CODE, "^\\d{1,6}"))) %>%
   as.data.table()
+
 
 naics_dt <- as.data.table(naics)
 
@@ -85,7 +85,6 @@ temp2 <- dcast(temp, ...1 + COMPANY + ADDRESS.LINE.1 + CITY + ZIPCODE + ZIP4 + L
 foodpoi <- temp2 %>%
   as.data.frame() %>%
   filter(!is.na(LONGITUDE)) %>%
-  st_as_sf(coords=c("LONGITUDE", "LATITUDE"), crs=4326) %>%
   rename(id=...1)
 
 foodpoi_plot <- temp %>%

@@ -10,9 +10,30 @@ source("0_Libraries.R")
 # run summarize measures
 # source('2_summarize_measures')
 ```
+# Planning document
+- [Methods description is here](https://docs.google.com/document/d/1rAyl0qsaWPcxM4E1X8-hP70vpzbPF7CYUYRq4pbERDM/edit?tab=t.0)
 
-## R Markdown
+# Pull in relevant data sources
+```{r}
 
+usdafa <- read.xlsx(paste0(base_path, "./USDA_foodatlas/FoodAccessResearchAtlasData2019.xlsx"))
+ct_driving <- read.csv(paste0(processed_path, "LAC_cleaned/ct_driving_times.csv"))
+
+
+```
+
+
+## Sanity checks
+✔️ We expect there to be 1424424 households in LA City
+- We also want to see why some CTs are missing observations in the household aggregate measures
+````{r}
+nrow(la_city_hh) # 1424424
+head(dt_household) 
+length(unique(dt_household$id)) # 1424424
+```
+
+
+## Visualize CT level data for all measures
 
 ```{r cars}
 # visualize ct_level data
@@ -20,24 +41,32 @@ head(read.csv(paste0(processed_path, "/LAC_cleaned/ct_driving_times.csv")))
 
 la_ct <- get_census_tracts(proj_crs, state="CA", year=2020, county="Los Angeles") %>%
   mutate(GEOID = as.numeric(GEOID)) 
+
 # map census tract data 
 # merge census tracts
 # filter any missing data
 ct_drive_data <- la_ct %>%
-  merge(read.csv(paste0(processed_path, "/LAC_cleaned/ct_driving_times.csv")) , by = "GEOID") %>%
-  filter(!is.na(driving_count_5_parcel_mean)) 
+  merge(read.csv(paste0(processed_path, "/LAC_cleaned/ct_driving_times.csv")) , by = "GEOID")
 
 # plot census tract data
-tm_shape(ct_drive_data) +
-  tm_polygons(col = "driving_count_5_parcel_mean", style = "quantile", palette = "Blues") +
-  tm_shape(la_county) +
-  tm_borders() +
-  tm_shape(ocean) +
-  tm_polygons(col="lightblue")+
-  tm_shape(la_parks) +
-  tm_polygons(col="mediumseagreen") +
-  tm_layout(inner.margins = c(0.1, .1, 0.2, 0.1)) +
-  tm_scale_bar()
+tmap_mode("plot")
+map <- tm_shape(ct_drive_data) +
+  tm_polygons(col = "driving_FF_15_parcel_mean", style = "quantile", palette = "Blues") #+
+  # tm_shape(la_county) +
+  # tm_borders() +
+  # tm_shape(ocean) +
+  # tm_polygons(col="lightblue")+
+  # tm_shape(la_parks) +
+  # tm_polygons(col="mediumseagreen") +
+  # tm_layout(inner.margins = c(0.1, .1, 0.2, 0.1)) +
+  # tm_scale_bar())
+
+
+print(map)
+
+```
+
+```{r}
 
 tm_shape(ct_drive_data) +
   tm_polygons(col = "driving_count_5_ct_cent", style = "quantile", palette = "Blues")  +
@@ -98,6 +127,7 @@ for(i in c(5, 10, 15, 20, 25)) {
 ```
 
 
+## Calculate t-tests to evaluate differences in distributions
 
 ```{r}
   # populate table
@@ -157,5 +187,17 @@ You can also embed plots, for example:
 
 ```{r pressure, echo=FALSE}
 plot(pressure)
+```
+
+## Map El Sendero data 
+```{r}
+elsend <- read.csv("../../0_shared-data/latino-health-elsendero/raw/ElSenderoPathwaysToH_DATA_LABELS_2025-04-22_1153.csv")
+elsend1 <- read.csv("../../0_shared-data/latino-health-elsendero/raw/ElSenderoPathwaysToH_DATA_LABELS_2025-04-22_1154.csv")
+
+# map the results
+
+
+
+
 ```
 
