@@ -26,8 +26,8 @@ clean_food_data <- function(type="markets") {
     mutate(lon = GEOCODE_LONGITUDE, lat = GEOCODE_LATITUDE) %>%
     mutate(count=1) %>%
     select(OBJECTID, lon, lat, count, small, large, MATCH_ADDR, FACILITY_NAME, SOURCE, TYPE) 
-
-print(paste("Number of", type, "in food inspection:", nrow(food_23_24_SSIclean %>% filter(TYPE==type))))
+  
+  print(paste("Number of", type, "in food inspection:", nrow(food_23_24_SSIclean %>% filter(TYPE==type))))
   
   # clean data axle market data from 2023
   food_23_DA_clean <- food_23_DA %>%
@@ -56,10 +56,9 @@ restaurants <- clean_food_data(type="res")
 length(unique(foodmarket_merged$FACILITY_NAME)) # get all unique names with # followed by number
 
 # ------ CLEAN AND GET CATEGORIES NAMES FROM HIRSCH ET AL., 2021 ------ #
-  # TODO put this in a function
+# TODO put this in a function
 library(googlesheets4)
 
-#
 poi_da <- get_data_axle(year=2022, state="CA") %>%
   filter(!is.na(COMPANY) & !is.na(PRIMARY.SIC.CODE))
 
@@ -75,12 +74,12 @@ poida_cleaned <- poi_da %>% # create one row per sic code in poi data
   mutate(NAICS.CODE.trunc = as.numeric(str_extract(PRIMARY.NAICS.CODE, "^\\d{1,6}"))) %>%
   as.data.table()
 
+naics_dt <- as.data.table(naics) %>%
+  rename("category"="zhang-2025")
 
-naics_dt <- as.data.table(naics)
-
-temp <- naics_dt[poida_cleaned, on = .(code == NAICS.CODE.trunc), nomatch = 0] # select variabbles in poida_cleaned between sic code
+temp <- naics_dt[poida_cleaned, on = .(code == NAICS.CODE.trunc), nomatch = 0] # select variables in poida_cleaned between sic code
 temp[, dummy:=1]
-temp2 <- dcast(temp, ...1 + COMPANY + ADDRESS.LINE.1 + CITY + ZIPCODE + ZIP4 + LATITUDE + LONGITUDE ~ `zhang-2025`, value.var="dummy", fill=0) # summarize to wide format with new columns representing food POI categories
+temp2 <- dcast(temp, ...1 + COMPANY + ADDRESS.LINE.1 + CITY + ZIPCODE + ZIP4 + LATITUDE + LONGITUDE ~ `category`, value.var="dummy", fill=0) # summarize to wide format with new columns representing food POI categories
 
 foodpoi <- temp2 %>%
   as.data.frame() %>%
@@ -91,8 +90,12 @@ foodpoi_plot <- temp %>%
   as.data.frame() %>%
   select(-c(6:8))
 
+
+# TODO re-geocode data
+
+
 # write foodpoi to file
-write.csv(foodpoi, paste0(processed_path, "foodpoi.csv"), row.names = FALSE)
+write_csv(foodpoi, paste0(processed_path, "foodpoi.csv"))
 
 #'*sensitivity analysis: inspect to see if chains are consistently coded *
 # find that the chains are consistently coded 

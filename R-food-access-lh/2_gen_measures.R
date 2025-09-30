@@ -25,7 +25,6 @@ tm_shape(la_city) + tm_borders() # inspect city
 
 la_city_ct <- la_ct %>%
   filter((lengths(st_intersects(., la_city)) > 0)) %>%
-  #filter(ALAND > 0) %>%
   st_transform(4326)
 
 # include households with census tract in la city
@@ -33,23 +32,21 @@ la_city_hh <- la_hh %>%
   filter(GEOID_20 %in% la_city_ct$GEOID) %>%
   st_transform(4326)
 
-la_city_hhn <- la_hh %>%
-  filter(lengths(st_intersects(., la_city)) > 0) %>%
-  st_transform(4326)
+# la_city_hhn <- la_hh %>%
+#   filter(lengths(st_intersects(., la_city)) > 0) %>%
+#   st_transform(4326)
 
-la_ct_map2 <- la_city_ct %>%
-  filter(GEOID %in% as.numeric(la_hh$GEOID_20))
-
-tm_shape(la_city) +
-  tm_fill(col="green") + 
-  tm_shape(la_ct_map2) +
-  tm_polygons(col = "blue", fill_alpha=.2) 
-
-temp <- setdiff(as.numeric(fc$GEOID_20), la_hh$GEOID_20)
-# everything is offset incorrectly!!
+# la_ct_map2 <- la_city_ct %>%
+#   filter(GEOID %in% as.numeric(la_hh$GEOID_20))
+# 
+# tm_shape(la_city) +
+#   tm_fill(col="green") + 
+#   tm_shape(la_ct_map2) +
+#   tm_polygons(col = "blue", fill_alpha=.2) 
+# 
+# temp <- setdiff(as.numeric($GEOID_20), la_hh$GEOID_20)
+# # everything is offset incorrectly!!
 # check if things are ok still
-
-
 temp2 <- fc %>% filter(GEOID_20 %in% temp)
 
 notinhh <- la_hh %>% filter(id %in% temp2$id)

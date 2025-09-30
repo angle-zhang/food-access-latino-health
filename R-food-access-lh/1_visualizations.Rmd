@@ -1,3 +1,8 @@
+```{r setup=TRUE}
+
+
+```
+
 # Map basic input data
 
 ```{r}
@@ -17,14 +22,24 @@ la_water <- area_water(state="CA", county="Los Angeles")%>%
 la_food <- foodpoi_plot %>%
   filter(!is.na(LONGITUDE)) %>%
   st_as_sf(coords=c("LONGITUDE", "LATITUDE"), crs=4326) %>%
-  st_transform(proj_crs) %>%
-  clipintersect_boundary(la_county)
+  st_transform(proj_crs) #%>%
+  #clipintersect_boundary(la_city)
+
+la_ctcent <- get_lac_centroids() %>%
+  st_transform(proj_crs) %>% # OSM data is in 4326
+  mutate(id=row_number()) 
+
+la_ct_wtcent <- get_lac_weight_centroids() %>%
+  st_transform(proj_crs) 
 
 
-osm_parks <- getbb("Los Angeles County", display_name_contains = "United States") % >%
-  opq() %>% 
-  add_osm_feature(key = "leisure", value=c("park", "nature_reserve", "golf_course")) %>% 
-  osmdata_sf()
+
+osm_parks <- getbb("Los Angeles County", 
+                   display_name_contains = "United States") %>%
+            opq() %>% 
+            add_osm_feature(key = "leisure", 
+                  value=c("park", "nature_reserve", "golf_course")) %>% 
+            osmdata_sf()
 
 la_parks <- osm_parks$osm_polygons %>%
   st_transform(proj_crs) %>%
@@ -56,35 +71,36 @@ tm_shape(la_city) +
 ```{r}
 
 tm_shape(la_city) +
-  tm_borders() +
-  tm_shape(la_food) +
-  tm_dots("zhang-2025", size = 0.01)
+  tm_borders(col="darkblue") +
+  tm_shape(la_food %>% filter(category!="SPF" | category!="Not included"), alpha=.9) +
+  tm_dots(col="category", size = 0.02) +  
+  tm_shape(la_water) +
+  tm_fill(col="lightblue", lwd=0) + 
+  tm_scale_bar(position=c("LEFT", "BOTTOM")) 
 
 ```
 
 ## Mapping population weighted census tract centroids
 
-```{r, include=FALSE}
+```{r}
 # remotes::install_version("tmap", version = "3.3-4") fix for tmap view
 # detach("package:tmap", unload=TRUE)
 
-tmap_mode("view")
+tmap_mode("plot")
 
-tmap_options(check.and.fix = TRUE) 
+boundary1 <- st_buffer(la_city, -200) 
 
-tm_shape(la_ct) +
-  tm_polygons(col="grey") +
-  tm_shape(la_ctcent_dat) +
+la_city_ct <- la_ct %>% filter((lengths(st_intersects(., boundary1)) > 0))
+
+tm_shape(la_city_ct) +
+  tm_polygons(col="white") +
+  tm_shape(la_ctcent %>% filter((lengths(st_intersects(., la_city)) > 0))) +
   tm_dots(col = "red", size = 0.02) +
-    tm_shape(la_ct_wtcent_dat) +
-  tm_dots(col = "purple", size = 0.02) +
+  tm_shape(la_ct_wtcent %>% filter((lengths(st_intersects(., la_city)) > 0))) +
+  tm_dots(col = "purple", size = 0.02) +  
+  tm_shape(la_water) +
+  tm_fill(col="lightblue", lwd=0) + 
   tm_layout(legend.position = c("left", "bottom")) 
-
-# tm_shape(la_county) +
-#   tm_borders() +
-#   tm_shape(la_hh_sample) +
-#   tm_dots(col = "black", size = 0.01) +
-#   tm_layout(legend.position = c("left", "bottom"))
 
 ```
 
@@ -98,8 +114,7 @@ We inspected the census tracts with strange behavior ID = 980016, 990200, 599100
 
 5991 - catalina island (remove)
 
-```{r}
-tract <- la_ct[la_ct$TRACTCE==980016,]
+```{tract <- la_ct[la_ct$TRACTCE==980016,]}
 
 print(tract$TRACTCE[[1]])  # Find adjacent tracts  
 
